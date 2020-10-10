@@ -188,7 +188,7 @@ enum _memory_op_t { no_memory_op = 0, memory_load, memory_store };
 #include <vector>
 
 #if !defined(__VECTOR_TYPES_H__)
-#include "vector_types.h"
+//#include "vector_types.h"
 #endif
 struct dim3comp {
   bool operator()(const dim3 &a, const dim3 &b) const {
