@@ -118,7 +118,7 @@ Processor::Processor(ParseXML *XML_interface)
       set_pppm(pppm_t, cores[i]->clockRate * procdynp.numCore, procdynp.numCore,
                procdynp.numCore, procdynp.numCore);
       // set the exClockRate
-      exClockRate = cores[0]->clockRate * 2;  // TODO; get from XML file
+      exClockRate = cores[0]->clockRate;  // TODO; get from XML file
       // cout<<"****EX clock rate:"<<exClockRate<<endl;
       core.power = core.power + cores[i]->power * pppm_t;
       set_pppm(pppm_t, 1 / cores[i]->executionTime, procdynp.numCore,

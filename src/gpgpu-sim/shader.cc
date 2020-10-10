@@ -456,6 +456,10 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
   m_sid = shader_id;
   m_tpc = tpc_id;
 
+  if(get_gpu()->get_config().g_power_simulation_enabled){
+    scaling_coeffs =  get_gpu()->get_scaling_coeffs();
+  }
+
   m_last_inst_gpu_sim_cycle = 0;
   m_last_inst_gpu_tot_sim_cycle = 0;
 
@@ -2170,7 +2174,7 @@ void sp_unit::active_lanes_in_pipeline() {
 void dp_unit::active_lanes_in_pipeline() {
   unsigned active_count = pipelined_simd_unit::get_active_lanes_in_pipeline();
   assert(active_count <= m_core->get_config()->warp_size);
-  m_core->incspactivelanes_stat(active_count);
+  //m_core->incspactivelanes_stat(active_count);
   m_core->incfuactivelanes_stat(active_count);
   m_core->incfumemactivelanes_stat(active_count);
 }
@@ -2960,52 +2964,63 @@ void warp_inst_t::print(FILE *fout) const {
   m_config->gpgpu_ctx->func_sim->ptx_print_insn(pc, fout);
   fprintf(fout, "\n");
 }
-void shader_core_ctx::incexecstat(warp_inst_t *&inst) {
-  if (inst->mem_op == TEX) inctex_stat(inst->active_count(), 1);
+void shader_core_ctx::incexecstat(warp_inst_t *&inst)
+{
+    // Latency numbers for next operations are used to scale the power values
+    // for special operations, according observations from microbenchmarking
+    // TODO: put these numbers in the xml configuration
 
-  // Latency numbers for next operations are used to scale the power values
-  // for special operations, according observations from microbenchmarking
-  // TODO: put these numbers in the xml configuration
-
-  switch (inst->sp_op) {
-    case INT__OP:
-      incialu_stat(inst->active_count(), 32);
-      break;
-    case INT_MUL_OP:
-      incimul_stat(inst->active_count(), 7.2);
-      break;
-    case INT_MUL24_OP:
-      incimul24_stat(inst->active_count(), 4.2);
-      break;
-    case INT_MUL32_OP:
-      incimul32_stat(inst->active_count(), 4);
-      break;
-    case INT_DIV_OP:
-      incidiv_stat(inst->active_count(), 40);
-      break;
-    case FP__OP:
-      incfpalu_stat(inst->active_count(), 1);
-      break;
-    case FP_MUL_OP:
-      incfpmul_stat(inst->active_count(), 1.8);
-      break;
-    case FP_DIV_OP:
-      incfpdiv_stat(inst->active_count(), 48);
-      break;
-    case FP_SQRT_OP:
-      inctrans_stat(inst->active_count(), 25);
-      break;
-    case FP_LG_OP:
-      inctrans_stat(inst->active_count(), 35);
-      break;
-    case FP_SIN_OP:
-      inctrans_stat(inst->active_count(), 12);
-      break;
-    case FP_EXP_OP:
-      inctrans_stat(inst->active_count(), 35);
-      break;
-    default:
-      break;
+  switch(inst->sp_op){
+  case INT__OP:
+    incialu_stat(inst->active_count(), scaling_coeffs->int_coeff);
+    break;
+  case INT_MUL_OP:
+    incimul_stat(inst->active_count(), scaling_coeffs->int_mul_coeff);
+    break;
+  case INT_MUL24_OP:
+    incimul24_stat(inst->active_count(), scaling_coeffs->int_mul24_coeff);
+    break;
+  case INT_MUL32_OP:
+    incimul32_stat(inst->active_count(), scaling_coeffs->int_mul32_coeff);
+    break;
+  case INT_DIV_OP:
+    incidiv_stat(inst->active_count(), scaling_coeffs->int_div_coeff);
+    break;
+  case FP__OP:
+    incfpalu_stat(inst->active_count(),scaling_coeffs->fp_coeff);
+    break;
+  case FP_MUL_OP:
+    incfpmul_stat(inst->active_count(), scaling_coeffs->fp_mul_coeff);
+    break;
+  case FP_DIV_OP:
+    incfpdiv_stat(inst->active_count(), scaling_coeffs->fp_div_coeff);
+    break;
+  case DP___OP:
+    incdpalu_stat(inst->active_count(), scaling_coeffs->dp_coeff);
+    break;
+  case DP_MUL_OP:
+    incdpmul_stat(inst->active_count(), scaling_coeffs->dp_mul_coeff);
+    break;
+  case DP_DIV_OP:
+    incdpdiv_stat(inst->active_count(), scaling_coeffs->dp_div_coeff);
+    break;
+  case FP_SQRT_OP:
+    incsqrt_stat(inst->active_count(), scaling_coeffs->sqrt_coeff);
+    break;
+  case FP_LG_OP:
+    inclog_stat(inst->active_count(), scaling_coeffs->log_coeff);
+    break;
+  case FP_SIN_OP:
+    incsin_stat(inst->active_count(), scaling_coeffs->sin_coeff);
+    break;
+  case FP_EXP_OP:
+    incexp_stat(inst->active_count(), scaling_coeffs->exp_coeff);
+    break;
+  case TENSOR__OP:
+    inctensor_stat(inst->active_count(), scaling_coeffs->tensor_coeff);
+    break;
+  default:
+    break;
   }
 }
 void shader_core_ctx::print_stage(unsigned int stage, FILE *fout) const {

@@ -107,6 +107,29 @@ void mcpat_cycle(const gpgpu_sim_config &config,
 
     // Execution pipeline accesses
     // FPU (SP) accesses, Integer ALU (not present in Tesla), Sfu accesses
+
+    wrapper->set_int_accesses(power_stats->get_ialu_accessess(), 
+                              power_stats->get_intmul24_accessess(), 
+                              power_stats->get_intmul32_accessess(), 
+                              power_stats->get_intmul_accessess(), 
+                              power_stats->get_intdiv_accessess());
+
+    wrapper->set_dp_accesses(power_stats->get_dp_accessess(), 
+                              power_stats->get_dpmul_accessess(), 
+                              power_stats->get_dpdiv_accessess());
+
+    wrapper->set_fp_accesses(power_stats->get_fp_accessess(), 
+                            power_stats->get_fpmul_accessess(), 
+                            power_stats->get_fpdiv_accessess());
+
+    wrapper->set_trans_accesses(power_stats->get_sqrt_accessess(), 
+                                power_stats->get_log_accessess(), 
+                                power_stats->get_sin_accessess(), 
+                                power_stats->get_exp_accessess());
+
+    wrapper->set_tensor_accesses(power_stats->get_tensor_accessess());
+
+
     wrapper->set_exec_unit_power(power_stats->get_tot_fpu_accessess(),
                                  power_stats->get_ialu_accessess(),
                                  power_stats->get_tot_sfu_accessess());

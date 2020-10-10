@@ -1384,6 +1384,8 @@ ptx_instruction::ptx_instruction(
       case CS_OPTION:
       case LU_OPTION:
       case CV_OPTION:
+      case WB_OPTION: 
+      case WT_OPTION:
         m_cache_option = last_ptx_inst_option;
         break;
       case HALF_OPTION:

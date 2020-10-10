@@ -82,7 +82,8 @@ struct power_config {
       s++;
     }
     char buf1[1024];
-    snprintf(buf1, 1024, "gpgpusim_power_report__%s.log", date);
+    //snprintf(buf1, 1024, "gpgpusim_power_report__%s.log", date);
+    snprintf(buf1, 1024, "gpgpusim_power_report.log", date);
     g_power_filename = strdup(buf1);
     char buf2[1024];
     snprintf(buf2, 1024, "gpgpusim_power_trace_report__%s.log.gz", date);
@@ -527,6 +528,7 @@ class gpgpu_sim : public gpgpu_t {
   bool kernel_more_cta_left(kernel_info_t *kernel) const;
   bool hit_max_cta_count() const;
   kernel_info_t *select_kernel();
+  PowerscalingCoefficients *get_scaling_coeffs();
   void decrement_kernel_latency();
 
   const gpgpu_sim_config &get_config() const { return m_config; }

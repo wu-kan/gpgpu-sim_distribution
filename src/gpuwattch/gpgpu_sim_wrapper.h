@@ -38,6 +38,7 @@
 #include <iostream>
 #include <string>
 #include "processor.h"
+#include "../abstract_hardware_model.h"
 
 using namespace std;
 
@@ -97,10 +98,22 @@ class gpgpu_sim_wrapper {
   void set_mem_ctrl_power(double reads, double writes, double dram_precharge);
   void set_exec_unit_power(double fpu_accesses, double ialu_accesses,
                            double sfu_accesses);
+  void set_int_accesses(double ialu_accesses, double imul24_accesses, 
+                        double imul32_accesses, double imul_accesses, 
+                        double idiv_accesses);
+  void set_dp_accesses(double dpu_accesses, double dpmul_accesses, 
+                       double dpdiv_accesses);
+  void set_fp_accesses(double fpu_accesses, double fpmul_accesses, 
+                       double fpdiv_accesses);
+  void set_trans_accesses(double sqrt_accesses, double log_accesses, 
+                       double sin_accesses, double exp_accesses);
+  void set_tensor_accesses(double tensor_accesses);
   void set_active_lanes_power(double sp_avg_active_lane,
                               double sfu_avg_active_lane);
   void set_NoC_power(double noc_tot_reads, double noc_tot_write);
   bool sanity_check(double a, double b);
+
+  PowerscalingCoefficients * get_scaling_coeffs();
 
  private:
   void print_steady_state(int position, double init_val);
@@ -140,6 +153,8 @@ class gpgpu_sim_wrapper {
   unsigned sample_start;
   double sample_val;
   double init_inst_val;
+  double tot_sfu_accesses;
+  double tot_fpu_accesses;
   std::vector<double> samples;
   std::vector<double> samples_counter;
   std::vector<double> pwr_counter;

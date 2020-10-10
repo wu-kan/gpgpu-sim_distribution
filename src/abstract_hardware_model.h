@@ -59,6 +59,25 @@ enum _memory_space_t {
   instruction_space
 };
 
+struct PowerscalingCoefficients{
+    double int_coeff;
+    double int_mul_coeff;
+    double int_mul24_coeff;
+    double int_mul32_coeff;
+    double int_div_coeff;
+    double fp_coeff;
+    double dp_coeff;
+    double fp_mul_coeff;
+    double fp_div_coeff;
+    double dp_mul_coeff;
+    double dp_div_coeff;
+    double sqrt_coeff;
+    double log_coeff;
+    double sin_coeff;
+    double exp_coeff;
+    double tensor_coeff;
+};
+
 enum FuncCache {
   FuncCachePreferNone = 0,
   FuncCachePreferShared = 1,
@@ -134,8 +153,13 @@ enum special_operations_t {
   FP_SQRT_OP,
   FP_LG_OP,
   FP_SIN_OP,
-  FP_EXP_OP
+  FP_EXP_OP,
+  DP_MUL_OP,
+  DP_DIV_OP,
+  DP___OP,
+  TENSOR__OP
 };
+
 typedef enum special_operations_t
     special_ops;  // Required to identify for the power model
 enum operation_pipeline_t {
@@ -930,6 +954,20 @@ class inst_t {
     return (op == STORE_OP || op == TENSOR_CORE_STORE_OP ||
             memory_op == memory_store);
   }
+
+  bool is_fp() const { return ((sp_op == FP__OP));}    //VIJAY
+  bool is_fpdiv() const { return ((sp_op == FP_DIV_OP));} 
+  bool is_fpmul() const { return ((sp_op == FP_MUL_OP));} 
+  bool is_dp() const { return ((sp_op == DP___OP));}    
+  bool is_dpdiv() const { return ((sp_op == DP_DIV_OP));} 
+  bool is_dpmul() const { return ((sp_op == DP_MUL_OP));}
+  bool is_imul() const { return ((sp_op == INT_MUL_OP));} 
+  bool is_imul24() const { return ((sp_op == INT_MUL24_OP));} 
+  bool is_imul32() const { return ((sp_op == INT_MUL32_OP));} 
+  bool is_idiv() const { return ((sp_op == INT_DIV_OP));}   
+  bool is_sfu() const {return ((sp_op == FP_SQRT_OP) || (sp_op == FP_LG_OP)  || (sp_op == FP_SIN_OP)  || (sp_op == FP_EXP_OP) || (sp_op == TENSOR__OP));}
+  bool is_alu() const {return (sp_op == INT__OP);}
+
   unsigned get_num_operands() const { return num_operands; }
   unsigned get_num_regs() const { return num_regs; }
   void set_num_regs(unsigned num) { num_regs = num; }

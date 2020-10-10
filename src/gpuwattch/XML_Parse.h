@@ -69,7 +69,7 @@ ToXMLStringTool tx,tx2;
 extern const char* perf_count_label[];
 
 enum perf_count_t {
-  TOT_INST = 0,
+  TOT_INST=0,
   FP_INT,
   IC_H,
   IC_M,
@@ -85,9 +85,22 @@ enum perf_count_t {
   REG_RD,
   REG_WR,
   NON_REG_OPs,
-  SP_ACC,
-  SFU_ACC,
-  FPU_ACC,
+  INT_ACC, //SPU
+  FP_ACC, //FPU
+  DP_ACC, //FPU
+  INT_MUL24_ACC, //SFU
+  INT_MUL32_ACC, //SFU
+  INT_MUL_ACC, //SFU 
+  INT_DIV_ACC, //SFU
+  FP_MUL_ACC, //SFU
+  FP_DIV_ACC, //SFU
+  FP_SQRT_ACC, //SFU
+  FP_LG_ACC, //SFU
+  FP_SIN_ACC, //SFU
+  FP_EXP_ACC, //SFU
+  DP_MUL_ACC, //SFU
+  DP_DIV_ACC, //SFU 
+  TENSOR_ACC, //SFU 
   MEM_RD,
   MEM_WR,
   MEM_PRE,
