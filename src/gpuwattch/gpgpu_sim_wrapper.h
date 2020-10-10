@@ -38,7 +38,7 @@
 #include <iostream>
 #include <string>
 #include "processor.h"
-#include "../abstract_hardware_model.h"
+//#include "../abstract_hardware_model.h"
 
 using namespace std;
 
@@ -53,6 +53,26 @@ struct avg_max_min_counters {
     max = 0;
     min = 0;
   }
+};
+
+#pragma once
+struct PowerscalingCoefficients{
+    double int_coeff;
+    double int_mul_coeff;
+    double int_mul24_coeff;
+    double int_mul32_coeff;
+    double int_div_coeff;
+    double fp_coeff;
+    double dp_coeff;
+    double fp_mul_coeff;
+    double fp_div_coeff;
+    double dp_mul_coeff;
+    double dp_div_coeff;
+    double sqrt_coeff;
+    double log_coeff;
+    double sin_coeff;
+    double exp_coeff;
+    double tensor_coeff;
 };
 
 class gpgpu_sim_wrapper {
