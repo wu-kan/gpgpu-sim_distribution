@@ -59,6 +59,9 @@ enum _memory_space_t {
   instruction_space
 };
 
+#ifndef COEFF_STRUCT
+#define COEFF_STRUCT
+
 struct PowerscalingCoefficients{
     double int_coeff;
     double int_mul_coeff;
@@ -77,6 +80,7 @@ struct PowerscalingCoefficients{
     double exp_coeff;
     double tensor_coeff;
 };
+#endif
 
 enum FuncCache {
   FuncCachePreferNone = 0,
