@@ -18,15 +18,18 @@ Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling.
 In proceedings of the 47th IEEE/ACM International Symposium on Computer Architecture (ISCA),
 May 29 - June 3, 2020.
 
-If you use cuDNN and Pytorch support, the Checkpoint function or the Debigging tool for functional simulation error in GPGPU-Sim for your research,
-please cite:
-Jonathan Lew, Deval Shah, Suchita Pati, Shaylin Cattell, Mengchi Zhang, Amruth Sandhupatla, Christopher Ng, Negar Goli, Matthew D. Sinclair, Timothy G. Rogers, Tor M. Aamodt
+If you use CuDNN or PyTorch support, checkpointing or our new debugging tool for functional 
+simulation errors in GPGPU-Sim for your research, please cite:
+
+Jonathan Lew, Deval Shah, Suchita Pati, Shaylin Cattell, Mengchi Zhang, Amruth Sandhupatla, 
+Christopher Ng, Negar Goli, Matthew D. Sinclair, Timothy G. Rogers, Tor M. Aamodt
 Analyzing Machine Learning Workloads Using a Detailed GPU Simulator, arXiv:1811.08933,
 https://arxiv.org/abs/1811.08933
 
 
-If you use the Tensor Core in GPGPU-Sim or CUTLASS Library for your research
-please cite:
+If you use the Tensor Core model in GPGPU-Sim or GPGPU-Sim's CUTLASS Library 
+for your research please cite:
+
 Md Aamir Raihan, Negar Goli, Tor Aamodt,
 Modeling Deep Learning Accelerator Enabled GPUs, arXiv:1811.08309, 
 https://arxiv.org/abs/1811.08309
@@ -257,15 +260,16 @@ To clean the docs run
 
 The documentation resides at doc/doxygen/html.
 
+To run Pytorch applications with the simulator, install the modified Pytorch library as well by following instructions [here](https://github.com/gpgpu-sim/pytorch-gpgpu-sim).
 ## Step 3: Run
 
 Before we run, we need to make sure the application's executable file is dynamically linked to CUDA runtime library. This can be done during compilation of your program by introducing the nvcc flag "--cudart shared" in makefile (quotes should be excluded).
 
 To confirm the same, type the follwoing command:
 
-ldd <your_application_name>
+`ldd <your_application_name>`
 
-You should see that your application is using libcudart.so file in GPGPUSim directory.
+You should see that your application is using libcudart.so file in GPGPUSim directory. If the application is a Pytorch application, `<your_application_name>` should be `$PYTORCH_BIN`, which should be set during the Pytorch installation.
 
 If running applications which use cuDNN or cuBLAS:
 
