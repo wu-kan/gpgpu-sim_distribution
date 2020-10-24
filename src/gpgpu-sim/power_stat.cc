@@ -170,6 +170,8 @@ void power_core_stat_t::print(FILE *fout) {
         fprintf(fout,"\tTotal FPDIV Acesses=%u\n",m_num_fpdiv_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal DPDIV Acesses=%u\n",m_num_dpdiv_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal TENSOR Acesses=%u\n",m_num_tensor_core_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal CONST Acesses=%u\n",m_num_const_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal TEX Acesses=%u\n",m_num_tex_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal SFU Acesses=%u\n",m_num_sfu_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal SP Acesses=%u\n",m_num_sp_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal MEM Acesses=%u\n",m_num_mem_acesses[CURRENT_STAT_IDX][i]);
@@ -206,6 +208,8 @@ void power_core_stat_t::init() {
     m_num_sin_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_sin_acesses;
     m_num_exp_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_exp_acesses;
     m_num_tensor_core_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_tensor_core_acesses;
+    m_num_const_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_const_acesses;
+    m_num_tex_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_tex_acesses;
     m_num_mem_acesses[CURRENT_STAT_IDX]=m_core_stats->m_num_mem_acesses;
     m_num_sp_committed[CURRENT_STAT_IDX]=m_core_stats->m_num_sp_committed;
     m_num_sfu_committed[CURRENT_STAT_IDX]=m_core_stats->m_num_sfu_committed;
@@ -237,6 +241,8 @@ void power_core_stat_t::init() {
     m_num_dpmul_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_dpdiv_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_tensor_core_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
+    m_num_const_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
+    m_num_tex_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_sp_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_sfu_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_sqrt_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
@@ -281,6 +287,8 @@ void power_core_stat_t::save_stats() {
     m_num_dpmul_acesses[PREV_STAT_IDX][i]=m_num_dpmul_acesses[CURRENT_STAT_IDX][i];
     m_num_dpdiv_acesses[PREV_STAT_IDX][i]=m_num_dpdiv_acesses[CURRENT_STAT_IDX][i];
     m_num_tensor_core_acesses[PREV_STAT_IDX][i]=m_num_tensor_core_acesses[CURRENT_STAT_IDX][i];
+    m_num_const_acesses[PREV_STAT_IDX][i]=m_num_const_acesses[CURRENT_STAT_IDX][i];
+    m_num_tex_acesses[PREV_STAT_IDX][i]=m_num_tex_acesses[CURRENT_STAT_IDX][i];
     m_num_mem_acesses[PREV_STAT_IDX][i]=m_num_mem_acesses[CURRENT_STAT_IDX][i];
     m_num_sp_committed[PREV_STAT_IDX][i]=m_num_sp_committed[CURRENT_STAT_IDX][i];
     m_num_sfu_committed[PREV_STAT_IDX][i]=m_num_sfu_committed[CURRENT_STAT_IDX][i];

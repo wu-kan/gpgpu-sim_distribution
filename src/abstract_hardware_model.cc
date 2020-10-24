@@ -281,14 +281,16 @@ void warp_inst_t::broadcast_barrier_reduction(
 void warp_inst_t::generate_mem_accesses() {
   if (empty() || op == MEMORY_BARRIER_OP || m_mem_accesses_created) return;
   if (!((op == LOAD_OP) || (op == TENSOR_CORE_LOAD_OP) || (op == STORE_OP) ||
-        (op == TENSOR_CORE_STORE_OP)))
+        (op == TENSOR_CORE_STORE_OP) ))
     return;
   if (m_warp_active_mask.count() == 0) return;  // predicated off
 
   const size_t starting_queue_size = m_accessq.size();
 
   assert(is_load() || is_store());
-  assert(m_per_scalar_thread_valid);  // need address information per thread
+
+  //if((space.get_type() != tex_space) && (space.get_type() != const_space))
+    assert(m_per_scalar_thread_valid);  // need address information per thread
 
   bool is_write = is_store();
 

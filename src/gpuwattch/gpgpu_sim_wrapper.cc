@@ -35,7 +35,7 @@ static const char* pwr_cmp_label[] = {
     "IBP,", "ICP,", "DCP,", "TCP,", "CCP,", "SHRDP,", "RFP,", "INTP,", 
     "FPUP,", "DPUP,", "INT_MUL24P,", "INT_MUL32P,", "INT_MULP,", "INT_DIVP,", 
     "FP_MULP,", "FP_DIVP,", "FP_SQRTP,", "FP_LGP,", "FP_SINP,", "FP_EXP,", 
-    "DP_MULP,", "DP_DIVP,", "TENSORP,", "SCHEDP,", "L2CP,", "MCP,", "NOCP,", 
+    "DP_MULP,", "DP_DIVP,", "TENSORP,", "TEXP,", "SCHEDP,", "L2CP,", "MCP,", "NOCP,", 
     "DRAMP,", "PIPEP,", "IDLE_COREP,", "CONST_DYNAMICP"};
 
 enum pwr_cmp_t {
@@ -62,6 +62,7 @@ enum pwr_cmp_t {
   DP_MULP,
   DP_DIVP,
   TENSORP,
+  TEXP,
   SCHEDP,
   L2CP,
   MCP,
@@ -424,7 +425,7 @@ PowerscalingCoefficients * gpgpu_sim_wrapper::get_scaling_coeffs()
   scalingCoeffs->sin_coeff = p->sys.scaling_coefficients[FP_SIN_ACC];
   scalingCoeffs->exp_coeff = p->sys.scaling_coefficients[FP_EXP_ACC];
   scalingCoeffs->tensor_coeff = p->sys.scaling_coefficients[TENSOR_ACC];
-
+  scalingCoeffs->tex_coeff = p->sys.scaling_coefficients[TEX_ACC];
   return scalingCoeffs;
 
 }
@@ -477,6 +478,12 @@ void gpgpu_sim_wrapper::set_trans_accesses(double sqrt_accesses,
 void gpgpu_sim_wrapper::set_tensor_accesses(double tensor_accesses)
 {
   sample_perf_counters[TENSOR_ACC]=tensor_accesses;
+
+}
+
+void gpgpu_sim_wrapper::set_tex_accesses(double tex_accesses)
+{
+  sample_perf_counters[TEX_ACC]=tex_accesses;
 
 }
 
@@ -655,6 +662,7 @@ void gpgpu_sim_wrapper::update_coefficients()
     initpower_coeff[FP_SIN_ACC]= sfu_coeff * sample_perf_counters[FP_SIN_ACC]/tot_sfu_accesses;
     initpower_coeff[FP_EXP_ACC]= sfu_coeff * sample_perf_counters[FP_EXP_ACC]/tot_sfu_accesses;
     initpower_coeff[TENSOR_ACC]= sfu_coeff * sample_perf_counters[TENSOR_ACC]/tot_sfu_accesses;
+    initpower_coeff[TEX_ACC]= sfu_coeff * sample_perf_counters[TEX_ACC]/tot_sfu_accesses;
   }
   else{
     initpower_coeff[INT_MUL24_ACC]= 0;
@@ -670,6 +678,7 @@ void gpgpu_sim_wrapper::update_coefficients()
     initpower_coeff[FP_SIN_ACC]= 0;
     initpower_coeff[FP_EXP_ACC]= 0;
     initpower_coeff[TENSOR_ACC]= 0;
+    initpower_coeff[TEX_ACC]= 0;
   }
 
   effpower_coeff[INT_ACC]= initpower_coeff[INT_ACC];
@@ -688,6 +697,7 @@ void gpgpu_sim_wrapper::update_coefficients()
   effpower_coeff[FP_SIN_ACC]= initpower_coeff[FP_SIN_ACC];
   effpower_coeff[FP_EXP_ACC]= initpower_coeff[FP_EXP_ACC];
   effpower_coeff[TENSOR_ACC]= initpower_coeff[TENSOR_ACC];
+  effpower_coeff[TEX_ACC]= initpower_coeff[TEX_ACC];
 
   initpower_coeff[NOC_A]=proc->get_coefficient_noc_accesses();
   effpower_coeff[NOC_A]=initpower_coeff[NOC_A]*p->sys.scaling_coefficients[NOC_A];
@@ -755,6 +765,7 @@ void gpgpu_sim_wrapper::update_components_power()
     sample_cmp_pwr[DP_MULP]= sample_sfu_pwr * sample_perf_counters[DP_MUL_ACC]/tot_sfu_accesses;
     sample_cmp_pwr[DP_DIVP]= sample_sfu_pwr * sample_perf_counters[DP_DIV_ACC]/tot_sfu_accesses;
     sample_cmp_pwr[TENSORP]= sample_sfu_pwr * sample_perf_counters[TENSOR_ACC]/tot_sfu_accesses;
+    sample_cmp_pwr[TEXP]= sample_sfu_pwr * sample_perf_counters[TEX_ACC]/tot_sfu_accesses;
   }
   else{
     sample_cmp_pwr[INT_MUL24P]= 0;
@@ -770,6 +781,7 @@ void gpgpu_sim_wrapper::update_components_power()
     sample_cmp_pwr[DP_MULP]= 0;
     sample_cmp_pwr[DP_DIVP]= 0;
     sample_cmp_pwr[TENSORP]= 0;
+    sample_cmp_pwr[TEXP]= 0;
   }
 
   sample_cmp_pwr[SCHEDP]=proc->cores[0]->exu->scheu->rt_power.readOp.dynamic/(proc->cores[0]->executionTime);

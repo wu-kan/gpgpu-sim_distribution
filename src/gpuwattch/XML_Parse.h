@@ -100,7 +100,8 @@ enum perf_count_t {
   FP_EXP_ACC, //SFU
   DP_MUL_ACC, //SFU
   DP_DIV_ACC, //SFU 
-  TENSOR_ACC, //SFU 
+  TENSOR_ACC, //SFU
+  TEX_ACC, //SFU 
   MEM_RD,
   MEM_WR,
   MEM_PRE,

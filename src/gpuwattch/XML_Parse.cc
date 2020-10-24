@@ -48,7 +48,7 @@ const char * perf_count_label[] = {
   "TC_H,", "TC_M,", "CC_H,", "CC_M,", "SHRD_ACC,", "REG_RD,", "REG_WR,", "NON_REG_OPs,",
   "INT_ACC,", "FPU_ACC,", "DPU_ACC,", "INT_MUL24_ACC,", "INT_MUL32_ACC,", "INT_MUL_ACC,","INT_DIV_ACC,", 
   "FP_MUL_ACC,", "FP_DIV_ACC,", "FP_SQRT_ACC,", "FP_LG_ACC,", "FP_SIN_ACC,", "FP_EXP_ACC,", "DP_MUL_ACC,", 
-  "DP_DIV_ACC,", "TENSOR_ACC,", "MEM_RD,","MEM_WR,", "MEM_PRE,", "L2_RH,", "L2_RM,", "L2_WH,",
+  "DP_DIV_ACC,", "TENSOR_ACC,", "TEX_ACC,", "MEM_RD,","MEM_WR,", "MEM_PRE,", "L2_RH,", "L2_RM,", "L2_WH,",
   "L2_WM,", "NOC_A,", "PIPE_A,", "IDLE_CORE_N,", "CONST_DYNAMICN"};
 
 
@@ -513,6 +513,12 @@ void ParseXML::parse(char* filepath) {
     if (strcmp(xNode2.getChildNode("param",i).getAttribute("name"),
                 "TENSOR_ACC")==0) {
       sys.scaling_coefficients[TENSOR_ACC] =
+          atof(xNode2.getChildNode("param",i).getAttribute("value"));
+      continue;
+    }
+    if (strcmp(xNode2.getChildNode("param",i).getAttribute("name"),
+                "TEX_ACC")==0) {
+      sys.scaling_coefficients[TEX_ACC] =
           atof(xNode2.getChildNode("param",i).getAttribute("value"));
       continue;
     }

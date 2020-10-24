@@ -72,6 +72,8 @@ struct shader_core_power_stats_pod {
     unsigned *m_num_sin_acesses[NUM_STAT_IDX];
     unsigned *m_num_exp_acesses[NUM_STAT_IDX];
     unsigned *m_num_tensor_core_acesses[NUM_STAT_IDX];
+    unsigned *m_num_const_acesses[NUM_STAT_IDX];
+    unsigned *m_num_tex_acesses[NUM_STAT_IDX];
     unsigned *m_num_mem_acesses[NUM_STAT_IDX];
     unsigned *m_num_sp_committed[NUM_STAT_IDX];
     unsigned *m_num_sfu_committed[NUM_STAT_IDX];
@@ -424,6 +426,24 @@ class power_stat_t {
     return total_inst;
   }
 
+  unsigned get_const_accessess(){
+    unsigned total_inst=0;
+    for(unsigned i=0; i<m_config->num_shader();i++){
+        total_inst += (pwr_core_stat->m_num_const_acesses[CURRENT_STAT_IDX][i]) - 
+                      (pwr_core_stat->m_num_const_acesses[PREV_STAT_IDX][i]);
+    }
+    return (total_inst + get_constant_c_accesses());
+  }
+
+  unsigned get_tex_accessess(){
+    unsigned total_inst=0;
+    for(unsigned i=0; i<m_config->num_shader();i++){
+        total_inst += (pwr_core_stat->m_num_tex_acesses[CURRENT_STAT_IDX][i]) - 
+                      (pwr_core_stat->m_num_tex_acesses[PREV_STAT_IDX][i]);
+    }
+    return total_inst;
+  }
+
   float get_sp_active_lanes() {
     unsigned total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
@@ -486,7 +506,9 @@ class power_stat_t {
                     (pwr_core_stat->m_num_imul_acesses[CURRENT_STAT_IDX][i]) - 
                     (pwr_core_stat->m_num_imul_acesses[PREV_STAT_IDX][i]) +
                     (pwr_core_stat->m_num_tensor_core_acesses[CURRENT_STAT_IDX][i]) - 
-                    (pwr_core_stat->m_num_tensor_core_acesses[PREV_STAT_IDX][i]);
+                    (pwr_core_stat->m_num_tensor_core_acesses[PREV_STAT_IDX][i]) +
+                    (pwr_core_stat->m_num_tex_acesses[CURRENT_STAT_IDX][i]) - 
+                    (pwr_core_stat->m_num_tex_acesses[PREV_STAT_IDX][i]);
     }
     return total_inst;
   }

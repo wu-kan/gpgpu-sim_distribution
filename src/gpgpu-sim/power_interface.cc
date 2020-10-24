@@ -54,6 +54,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
     return;
   }
 
+
   if ((tot_cycle + cycle) % stat_sample_freq == 0) {
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, stat_sample_freq,
@@ -73,8 +74,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                               power_stats->get_inst_c_misses());
 
     // Constant Cache, shared memory, texture cache
-    wrapper->set_ccache_power(power_stats->get_constant_c_hits(),
-                              power_stats->get_constant_c_misses());
+    wrapper->set_ccache_power(power_stats->get_const_accessess(), 0); //assuming all HITS in constant cache for now
     wrapper->set_tcache_power(power_stats->get_texture_c_hits(),
                               power_stats->get_texture_c_misses());
     wrapper->set_shrd_mem_power(power_stats->get_shmem_read_access());
@@ -129,6 +129,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
 
     wrapper->set_tensor_accesses(power_stats->get_tensor_accessess());
 
+    wrapper->set_tex_accesses(power_stats->get_tex_accessess());
 
     wrapper->set_exec_unit_power(power_stats->get_tot_fpu_accessess(),
                                  power_stats->get_ialu_accessess(),

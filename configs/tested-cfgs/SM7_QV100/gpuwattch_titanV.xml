@@ -18,7 +18,7 @@
 		<param name="homogeneous_ccs" value="1"/><!--cache coherece hardware -->
 		<param name="homogeneous_NoCs" value="1"/>
 		<param name="core_tech_node" value="23"/><!-- nm -->
-		<param name="target_core_clockrate" value="1335"/><!--MHz -->
+		<param name="target_core_clockrate" value="1447"/><!--MHz -->
 		<param name="temperature" value="340"/> <!-- Kelvin -->
 		<param name="number_cache_levels" value="2"/>
 		<param name="interconnect_projection_type" value="0"/><!--0: agressive wire technology; 1: conservative wire technology -->
@@ -62,7 +62,8 @@
 		<param name="FP_EXP_ACC" value="1.365" />
 		<param name="DP_MUL_ACC" value="0.66" />
 		<param name="DP_DIV_ACC" value="30.5496" />
-		<param name="TENSOR_ACC" value="37.40187528" />
+		<param name="TENSOR_ACC" value="1.225" />
+		<param name="TEX_ACC" value="1.225" />
 		<param name="MEM_RD" value="0.04019275" />
 		<param name="MEM_WR" value="0.04871685" />
 		<param name="MEM_PRE" value="0.0133965" />
@@ -85,7 +86,7 @@
 		<!-- *********************** cores ******************* -->
 		<component id="system.core0" name="core0">
 			<!-- Core property -->
-			<param name="clock_rate" value="1335"/>
+			<param name="clock_rate" value="1447"/>
 			<param name="instruction_length" value="32"/>
 			<param name="opcode_width" value="9"/>
 			<!-- address width determins the tag_width in Cache, LSQ and buffers in cache controller 

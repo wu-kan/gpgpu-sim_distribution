@@ -79,6 +79,7 @@ struct PowerscalingCoefficients{
     double sin_coeff;
     double exp_coeff;
     double tensor_coeff;
+    double tex_coeff;
 };
 #endif
 
@@ -161,7 +162,8 @@ enum special_operations_t {
   DP_MUL_OP,
   DP_DIV_OP,
   DP___OP,
-  TENSOR__OP
+  TENSOR__OP,
+  TEX__OP
 };
 
 typedef enum special_operations_t
@@ -930,6 +932,7 @@ class inst_t {
     sp_op = OTHER_OP;
     op_pipe = UNKOWN_OP;
     mem_op = NOT_TEX;
+    const_cache_operand = 0;
     num_operands = 0;
     num_regs = 0;
     memset(out, 0, sizeof(unsigned));
@@ -995,6 +998,7 @@ class inst_t {
   operation_pipeline op_pipe;  // code (uarch visible) identify the pipeline of
                                // the operation (SP, SFU or MEM)
   mem_operation mem_op;        // code (uarch visible) identify memory type
+  bool const_cache_operand;   // has a load from constant memory as an operand
   _memory_op_t memory_op;      // memory_op used by ptxplus
   unsigned num_operands;
   unsigned num_regs;  // count vector operand as one register operand

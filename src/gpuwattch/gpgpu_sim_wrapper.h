@@ -74,6 +74,7 @@ struct PowerscalingCoefficients{
     double sin_coeff;
     double exp_coeff;
     double tensor_coeff;
+    double tex_coeff;
 };
 
 #endif
@@ -131,6 +132,7 @@ class gpgpu_sim_wrapper {
   void set_trans_accesses(double sqrt_accesses, double log_accesses, 
                        double sin_accesses, double exp_accesses);
   void set_tensor_accesses(double tensor_accesses);
+  void set_tex_accesses(double tex_accesses);
   void set_active_lanes_power(double sp_avg_active_lane,
                               double sfu_avg_active_lane);
   void set_NoC_power(double noc_tot_reads, double noc_tot_write);

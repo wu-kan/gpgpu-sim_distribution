@@ -861,7 +861,7 @@ void shader_core_ctx::decode() {
     m_warp[m_inst_fetch_buffer.m_warp_id]->inc_inst_in_pipeline();
     if (pI1) {
       m_stats->m_num_decoded_insn[m_sid]++;
-      if (pI1->oprnd_type == INT_OP) {
+      if ((pI1->oprnd_type == INT_OP) || (pI1->oprnd_type == UN_OP))  { //these counters get added up in mcPat to compute scheduler power
         m_stats->m_num_INTdecoded_insn[m_sid]++;
       } else if (pI1->oprnd_type == FP_OP) {
         m_stats->m_num_FPdecoded_insn[m_sid]++;
@@ -872,7 +872,7 @@ void shader_core_ctx::decode() {
         m_warp[m_inst_fetch_buffer.m_warp_id]->ibuffer_fill(1, pI2);
         m_warp[m_inst_fetch_buffer.m_warp_id]->inc_inst_in_pipeline();
         m_stats->m_num_decoded_insn[m_sid]++;
-        if (pI2->oprnd_type == INT_OP) {
+        if ((pI1->oprnd_type == INT_OP) || (pI1->oprnd_type == UN_OP))  { //these counters get added up in mcPat to compute scheduler power
           m_stats->m_num_INTdecoded_insn[m_sid]++;
         } else if (pI2->oprnd_type == FP_OP) {
           m_stats->m_num_FPdecoded_insn[m_sid]++;
@@ -2969,58 +2969,64 @@ void shader_core_ctx::incexecstat(warp_inst_t *&inst)
     // Latency numbers for next operations are used to scale the power values
     // for special operations, according observations from microbenchmarking
     // TODO: put these numbers in the xml configuration
-
-  switch(inst->sp_op){
-  case INT__OP:
-    incialu_stat(inst->active_count(), scaling_coeffs->int_coeff);
-    break;
-  case INT_MUL_OP:
-    incimul_stat(inst->active_count(), scaling_coeffs->int_mul_coeff);
-    break;
-  case INT_MUL24_OP:
-    incimul24_stat(inst->active_count(), scaling_coeffs->int_mul24_coeff);
-    break;
-  case INT_MUL32_OP:
-    incimul32_stat(inst->active_count(), scaling_coeffs->int_mul32_coeff);
-    break;
-  case INT_DIV_OP:
-    incidiv_stat(inst->active_count(), scaling_coeffs->int_div_coeff);
-    break;
-  case FP__OP:
-    incfpalu_stat(inst->active_count(),scaling_coeffs->fp_coeff);
-    break;
-  case FP_MUL_OP:
-    incfpmul_stat(inst->active_count(), scaling_coeffs->fp_mul_coeff);
-    break;
-  case FP_DIV_OP:
-    incfpdiv_stat(inst->active_count(), scaling_coeffs->fp_div_coeff);
-    break;
-  case DP___OP:
-    incdpalu_stat(inst->active_count(), scaling_coeffs->dp_coeff);
-    break;
-  case DP_MUL_OP:
-    incdpmul_stat(inst->active_count(), scaling_coeffs->dp_mul_coeff);
-    break;
-  case DP_DIV_OP:
-    incdpdiv_stat(inst->active_count(), scaling_coeffs->dp_div_coeff);
-    break;
-  case FP_SQRT_OP:
-    incsqrt_stat(inst->active_count(), scaling_coeffs->sqrt_coeff);
-    break;
-  case FP_LG_OP:
-    inclog_stat(inst->active_count(), scaling_coeffs->log_coeff);
-    break;
-  case FP_SIN_OP:
-    incsin_stat(inst->active_count(), scaling_coeffs->sin_coeff);
-    break;
-  case FP_EXP_OP:
-    incexp_stat(inst->active_count(), scaling_coeffs->exp_coeff);
-    break;
-  case TENSOR__OP:
-    inctensor_stat(inst->active_count(), scaling_coeffs->tensor_coeff);
-    break;
-  default:
-    break;
+  if(get_gpu()->get_config().g_power_simulation_enabled){
+    switch(inst->sp_op){
+    case INT__OP:
+      incialu_stat(inst->active_count(), scaling_coeffs->int_coeff);
+      break;
+    case INT_MUL_OP:
+      incimul_stat(inst->active_count(), scaling_coeffs->int_mul_coeff);
+      break;
+    case INT_MUL24_OP:
+      incimul24_stat(inst->active_count(), scaling_coeffs->int_mul24_coeff);
+      break;
+    case INT_MUL32_OP:
+      incimul32_stat(inst->active_count(), scaling_coeffs->int_mul32_coeff);
+      break;
+    case INT_DIV_OP:
+      incidiv_stat(inst->active_count(), scaling_coeffs->int_div_coeff);
+      break;
+    case FP__OP:
+      incfpalu_stat(inst->active_count(),scaling_coeffs->fp_coeff);
+      break;
+    case FP_MUL_OP:
+      incfpmul_stat(inst->active_count(), scaling_coeffs->fp_mul_coeff);
+      break;
+    case FP_DIV_OP:
+      incfpdiv_stat(inst->active_count(), scaling_coeffs->fp_div_coeff);
+      break;
+    case DP___OP:
+      incdpalu_stat(inst->active_count(), scaling_coeffs->dp_coeff);
+      break;
+    case DP_MUL_OP:
+      incdpmul_stat(inst->active_count(), scaling_coeffs->dp_mul_coeff);
+      break;
+    case DP_DIV_OP:
+      incdpdiv_stat(inst->active_count(), scaling_coeffs->dp_div_coeff);
+      break;
+    case FP_SQRT_OP:
+      incsqrt_stat(inst->active_count(), scaling_coeffs->sqrt_coeff);
+      break;
+    case FP_LG_OP:
+      inclog_stat(inst->active_count(), scaling_coeffs->log_coeff);
+      break;
+    case FP_SIN_OP:
+      incsin_stat(inst->active_count(), scaling_coeffs->sin_coeff);
+      break;
+    case FP_EXP_OP:
+      incexp_stat(inst->active_count(), scaling_coeffs->exp_coeff);
+      break;
+    case TENSOR__OP:
+      inctensor_stat(inst->active_count(), scaling_coeffs->tensor_coeff);
+      break;
+    case TEX__OP:
+      inctex_stat(inst->active_count(), scaling_coeffs->tex_coeff);
+      break;
+    default:
+      break;
+    }
+    if(inst->const_cache_operand) //warp has const address space load as one operand
+      inc_const_accesses(inst->active_count());
   }
 }
 void shader_core_ctx::print_stage(unsigned int stage, FILE *fout) const {
