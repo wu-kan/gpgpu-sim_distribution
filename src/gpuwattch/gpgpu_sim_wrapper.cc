@@ -800,13 +800,13 @@ void gpgpu_sim_wrapper::update_components_power()
 
   // This constant dynamic power (e.g., clock power) part is estimated via regression model.
   sample_cmp_pwr[CONST_DYNAMICP]=0;
-  double cnst_dyn = proc->get_const_dynamic_power()/(proc->cores[0]->executionTime);
-  // If the regression scaling term is greater than the recorded constant dynamic power
-  // then use the difference (other portion already added to dynamic power). Else,
-  // all the constant dynamic power is accounted for, add nothing.
-  if(p->sys.scaling_coefficients[CONST_DYNAMICN] > cnst_dyn)
-    sample_cmp_pwr[CONST_DYNAMICP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
-
+  // double cnst_dyn = proc->get_const_dynamic_power()/(proc->cores[0]->executionTime);
+  // // If the regression scaling term is greater than the recorded constant dynamic power
+  // // then use the difference (other portion already added to dynamic power). Else,
+  // // all the constant dynamic power is accounted for, add nothing.
+  // if(p->sys.scaling_coefficients[CONST_DYNAMICN] > cnst_dyn)
+  //   sample_cmp_pwr[CONST_DYNAMICP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
+  sample_cmp_pwr[CONST_DYNAMICP] = p->sys.scaling_coefficients[CONST_DYNAMICN];
   proc_power+=sample_cmp_pwr[CONST_DYNAMICP];
   double sum_pwr_cmp=0;
   for(unsigned i=0; i<num_pwr_cmps; i++){
