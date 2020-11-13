@@ -69,7 +69,6 @@ andn	TC; yylval->int_value = ANDN_OP; return OPCODE;
 atom	TC; yylval->int_value = ATOM_OP; return OPCODE;
 bar.warp 	TC; yylval->int_value = NOP_OP; return OPCODE;
 bar 	TC; yylval->int_value = BAR_OP; return OPCODE;
-barrier TC; yylval->int_value = BAR_OP; return OPCODE;
 bfe     TC; yylval->int_value = BFE_OP; return OPCODE;
 bfi     TC; yylval->int_value = BFI_OP; return OPCODE;
 bfind   TC; yylval->int_value = BFIND_OP; return OPCODE;
@@ -168,14 +167,19 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 "CPTX_END"	printf("ENDING CUSTOM PTX.\n"); BEGIN(IN_COMMENT);
 
 <INITIAL,NOT_OPCODE,IN_INST,IN_FUNC_DECL>{
-\.a\.sync TC; yylval->int_value = LOAD_A; return WMMA_DIRECTIVE;
-\.b\.sync TC; yylval->int_value = LOAD_B; return WMMA_DIRECTIVE;
-\.c\.sync TC; yylval->int_value = LOAD_C; return WMMA_DIRECTIVE;
-\.d\.sync TC; yylval->int_value = STORE_D; return WMMA_DIRECTIVE;
-\.mma\.sync TC;yylval->int_value=MMA; return WMMA_DIRECTIVE;
+\.a\.sync\.aligned TC; yylval->int_value = LOAD_A; return WMMA_DIRECTIVE;
+\.b\.sync\.aligned TC; yylval->int_value = LOAD_B; return WMMA_DIRECTIVE;
+\.c\.sync\.aligned TC; yylval->int_value = LOAD_C; return WMMA_DIRECTIVE;
+\.d\.sync\.aligned TC; yylval->int_value = STORE_D; return WMMA_DIRECTIVE;
+\.mma\.sync\.aligned TC;yylval->int_value=MMA; return WMMA_DIRECTIVE;
 
 \.row TC; yylval->int_value = ROW; return LAYOUT;
 \.col TC; yylval->int_value = COL; return LAYOUT;
+\.m16n16k16\.global TC; yylval->int_value = M16N16K16; return CONFIGURATION;
+\.m32n8k16\.global TC; yylval->int_value = M32N8K16; return CONFIGURATION;
+\.m8n32k16\.global TC;  yylval->int_value = M8N32K16; return CONFIGURATION;
+
+
 \.m16n16k16 TC; yylval->int_value = M16N16K16; return CONFIGURATION;
 \.m32n8k16 TC; yylval->int_value = M32N8K16; return CONFIGURATION;
 \.m8n32k16 TC;  yylval->int_value = M8N32K16; return CONFIGURATION;

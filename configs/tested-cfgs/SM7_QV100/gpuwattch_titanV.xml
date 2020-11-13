@@ -28,55 +28,57 @@
 		<param name="virtual_address_width" value="32"/>
 		<param name="physical_address_width" value="32"/>
 		<param name="virtual_memory_page_size" value="4096"/>
-		<param name="idle_core_power" value="0.35"/><!-- idle core power for GTX479 -->
+		<param name="idle_core_power" value="0.287840966"/><!-- idle core power for GTX479 -->
 		<!--param name="scaling_coefficients" value="10,0.0884816,10,10,8,10,4.12782,10,2.48832,10,10,10,4.29982,0.387764,0.0714269,0.14302,0.01,0.546811,0.485351,0.806633,0.818073,1.9207,100,100,100,87.9303,100,10,4.3548,10"/-->
-		<param name="TOT_INST" value="2.5" />
-		<param name="FP_INT" value="2" />
-		<param name="IC_H" value="0.001" />
-		<param name="IC_M" value="10" />
-		<param name="DC_RH" value="2.5" />
-		<param name="DC_RM" value="2.5" />
-		<param name="DC_WH" value="2.5" />
-		<param name="DC_WM" value="2.5" />
-		<param name="TC_H" value="0.2" />
-		<param name="TC_M" value="0.2" />
-		<param name="CC_H" value="10" />
-		<param name="CC_M" value="10" />
-		<param name="SHRD_ACC" value="2.1" />
-		<param name="REG_RD" value="0.135" />
-		<param name="REG_WR" value="0.0675" />
-		<param name="NON_REG_OPs" value="0.0045" />
-				
-		<param name="INT_ACC" value="36" />
+		<param name="TOT_INST" value="1" />
+		<param name="FP_INT" value="1" />
+		<param name="IC_H" value="1" />
+		<param name="IC_M" value="1" />
+		<param name="DC_RH" value="1" />
+		<param name="DC_RM" value="1" />
+		<param name="DC_WH" value="1" />
+		<param name="DC_WM" value="1" />
+		<param name="CC_H" value="1" />
+		<param name="CC_M" value="1" />
+		<param name="SHRD_ACC" value="1" />
+		<param name="REG_RD" value="1" />
+		<param name="REG_WR" value="1" />
+		<param name="NON_REG_OPs" value="1" />
+		<param name="INT_ACC" value="1" />
 		<param name="FP_ACC" value="1" />
-		<param name="DP_ACC" value="1.6" />
-		<param name="INT_MUL24_ACC" value="0.5192" />
-		<param name="INT_MUL32_ACC" value="0.42" />
-		<param name="INT_MUL_ACC" value="0.65" />
-		<param name="INT_DIV_ACC" value="2.16981" />
-		<param name="FP_MUL_ACC" value="0.429" />
-		<param name="FP_DIV_ACC" value="1.41047" />
-		<param name="FP_SQRT_ACC" value="1.77135" />
-		<param name="FP_LG_ACC" value="1.225" />
-		<param name="FP_SIN_ACC" value="1.225" />
-		<param name="FP_EXP_ACC" value="1.365" />
-		<param name="DP_MUL_ACC" value="0.66" />
-		<param name="DP_DIV_ACC" value="30.5496" />
-		<param name="TENSOR_ACC" value="1.225" />
-		<param name="TEX_ACC" value="1.225" />
-		<param name="MEM_RD" value="0.04019275" />
-		<param name="MEM_WR" value="0.04871685" />
-		<param name="MEM_PRE" value="0.0133965" />
-		<param name="L2_RH" value="11.8819032" />
-		<param name="L2_RM" value="11.8819032" />
-		<param name="L2_WH" value="11.8819032" />
-		<param name="L2_WM" value="11.8819032" />
-		<param name="NOC_A" value="372.4725532" />
-		<param name="PIPE_A" value="0.2" />
-		<param name="IDLE_CORE_N" value="0.35"/>
-		<param name="CONST_DYNAMICN" value="5.0005" />
+		<param name="DP_ACC" value="1" />
+		<param name="INT_MUL_ACC" value="1" />
+		<param name="FP_MUL_ACC" value="1" />
+		<param name="FP_SQRT_ACC" value="1" />
+		<param name="FP_LG_ACC" value="1" />
+		<param name="FP_SIN_ACC" value="1" />
+		<param name="FP_EXP_ACC" value="1" />
+		<param name="DP_MUL_ACC" value="1" />
+		<param name="TENSOR_ACC" value="1" />
+		<param name="TEX_ACC" value="1" />
+		<param name="MEM_RD" value="1" />
+		<param name="MEM_WR" value="1" />
+		<param name="MEM_PRE" value="1" />
+		<param name="L2_RH" value="1" />
+		<param name="L2_RM" value="1" />
+		<param name="L2_WH" value="1" />
+		<param name="L2_WM" value="1" />
+		<param name="NOC_A" value="1" />
+		<param name="PIPE_A" value="1" />
+		<param name="CONST_DYNAMICN" value="32.32522272" />
 		
-		
+		<!-- These counters do nothing for GV100 SASS Model -->
+		<param name="TC_H" value="1" />
+		<param name="TC_M" value="1" />
+		<param name="INT_DIV_ACC" value="1" />
+		<param name="FP_DIV_ACC" value="1" />
+		<param name="DP_DIV_ACC" value="1" />
+		<param name="INT_MUL24_ACC" value="1" />
+		<param name="INT_MUL32_ACC" value="1" />
+		<param name="IDLE_CORE_N" value="1"/>
+
+
+
 		<stat name="num_idle_cores" value="0"/><!-- Average Number of idle cores during this period -->
 		<stat name="total_cycles" value="total_cycles_match_mcpat"/>
 		<stat name="idle_cycles" value="idle_cycles_match_mcpat"/>
