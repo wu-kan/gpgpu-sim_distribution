@@ -97,6 +97,7 @@ class gpgpu_sim_wrapper {
   void dump();
   void print_trace_files();
   void update_components_power();
+  double calculate_static_power();
   void update_coefficients();
   void reset_counters();
   void print_power_kernel_stats(double gpu_sim_cycle, double gpu_tot_sim_cycle,
@@ -117,6 +118,7 @@ class gpgpu_sim_wrapper {
                          double write_accesses, double write_misses);
   void set_l2cache_power(double read_accesses, double read_misses,
                          double write_accesses, double write_misses);
+  void set_num_cores(double num_core);
   void set_idle_core_power(double num_idle_core);
   void set_duty_cycle_power(double duty_cycle);
   void set_mem_ctrl_power(double reads, double writes, double dram_precharge);
@@ -133,6 +135,7 @@ class gpgpu_sim_wrapper {
                        double sin_accesses, double exp_accesses);
   void set_tensor_accesses(double tensor_accesses);
   void set_tex_accesses(double tex_accesses);
+  void set_avg_active_threads(float active_threads);
   void set_active_lanes_power(double sp_avg_active_lane,
                               double sfu_avg_active_lane);
   void set_NoC_power(double noc_tot_reads, double noc_tot_write);
@@ -148,7 +151,8 @@ class gpgpu_sim_wrapper {
   // power parameters
   double const_dynamic_power;
   double proc_power;
-
+  double num_cores;
+  double num_idle_cores;
   unsigned num_perf_counters;  // # of performance counters
   unsigned num_pwr_cmps;       // # of components modelled
   int kernel_sample_count;     // # of samples per kernel
@@ -180,6 +184,7 @@ class gpgpu_sim_wrapper {
   double init_inst_val;
   double tot_sfu_accesses;
   double tot_fpu_accesses;
+  unsigned avg_threads_per_warp;
   std::vector<double> samples;
   std::vector<double> samples_counter;
   std::vector<double> pwr_counter;

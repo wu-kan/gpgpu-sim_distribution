@@ -36,7 +36,7 @@ static const char* pwr_cmp_label[] = {
     "FPUP,", "DPUP,", "INT_MUL24P,", "INT_MUL32P,", "INT_MULP,", "INT_DIVP,", 
     "FP_MULP,", "FP_DIVP,", "FP_SQRTP,", "FP_LGP,", "FP_SINP,", "FP_EXP,", 
     "DP_MULP,", "DP_DIVP,", "TENSORP,", "TEXP,", "SCHEDP,", "L2CP,", "MCP,", "NOCP,", 
-    "DRAMP,", "PIPEP,", "IDLE_COREP,", "CONST_DYNAMICP"};
+    "DRAMP,", "PIPEP,", "IDLE_COREP,", "CONSTP", "STATICP"};
 
 enum pwr_cmp_t {
   IBP=0,
@@ -70,7 +70,8 @@ enum pwr_cmp_t {
   DRAMP,
   PIPEP,
   IDLE_COREP,
-  CONST_DYNAMICP,
+  CONSTP,
+  STATICP,
   NUM_COMPONENTS_MODELLED
 };
 
@@ -368,9 +369,15 @@ void gpgpu_sim_wrapper::set_l2cache_power(double read_hits, double read_misses,
   sample_perf_counters[L2_WM] = write_misses;
 }
 
+void gpgpu_sim_wrapper::set_num_cores(double num_core) {
+  
+  num_cores = num_core;
+}
+
 void gpgpu_sim_wrapper::set_idle_core_power(double num_idle_core) {
   p->sys.num_idle_cores = num_idle_core;
   sample_perf_counters[IDLE_CORE_N] = num_idle_core;
+  num_idle_cores = num_idle_core;
 }
 
 void gpgpu_sim_wrapper::set_duty_cycle_power(double duty_cycle) {
@@ -487,6 +494,12 @@ void gpgpu_sim_wrapper::set_tex_accesses(double tex_accesses)
 
 }
 
+void gpgpu_sim_wrapper::set_avg_active_threads(float active_threads)
+{
+  avg_threads_per_warp = (unsigned)ceil(active_threads);
+
+}
+
 void gpgpu_sim_wrapper::set_active_lanes_power(double sp_avg_active_lane,
                                                double sfu_avg_active_lane) {
   p->sys.core[0].sp_average_active_lanes = sp_avg_active_lane;
@@ -507,7 +520,7 @@ void gpgpu_sim_wrapper::power_metrics_calculations() {
 
   // Current sample power
   double sample_power =
-      proc->rt_power.readOp.dynamic + sample_cmp_pwr[CONST_DYNAMICP];
+      proc->rt_power.readOp.dynamic + sample_cmp_pwr[CONSTP] + sample_cmp_pwr[STATICP];
 
   // Average power
   // Previous + new + constant dynamic power (e.g., dynamic clocking power)
@@ -702,12 +715,114 @@ void gpgpu_sim_wrapper::update_coefficients()
   initpower_coeff[NOC_A]=proc->get_coefficient_noc_accesses();
   effpower_coeff[NOC_A]=initpower_coeff[NOC_A]*p->sys.scaling_coefficients[NOC_A];
 
-  const_dynamic_power=proc->get_const_dynamic_power()/(proc->cores[0]->executionTime);
+  //const_dynamic_power=proc->get_const_dynamic_power()/(proc->cores[0]->executionTime);
 
   for(unsigned i=0; i<num_perf_counters; i++){
     initpower_coeff[i]/=(proc->cores[0]->executionTime);
     effpower_coeff[i]/=(proc->cores[0]->executionTime);
   }
+}
+
+double gpgpu_sim_wrapper::calculate_static_power(){ 
+	double int_accesses = initpower_coeff[INT_ACC] + initpower_coeff[INT_MUL24_ACC] + initpower_coeff[INT_MUL32_ACC] + initpower_coeff[INT_MUL_ACC] + initpower_coeff[INT_DIV_ACC];
+	double int_add_accesses = initpower_coeff[INT_ACC];
+	double int_mul_accesses = initpower_coeff[INT_MUL24_ACC] + initpower_coeff[INT_MUL32_ACC] + initpower_coeff[INT_MUL_ACC] + initpower_coeff[INT_DIV_ACC];
+	double fp_accesses = initpower_coeff[FP_ACC] + initpower_coeff[FP_MUL_ACC] + initpower_coeff[FP_DIV_ACC];
+	double dp_accesses = initpower_coeff[DP_ACC] + initpower_coeff[DP_MUL_ACC] + initpower_coeff[DP_DIV_ACC];
+	double sfu_accesses = initpower_coeff[FP_SQRT_ACC] + initpower_coeff[FP_LG_ACC] + initpower_coeff[FP_SIN_ACC] + initpower_coeff[FP_EXP_ACC];
+	double tensor_accesses = initpower_coeff[TENSOR_ACC];
+	double tex_accesses = initpower_coeff[TEX_ACC];
+	double total_static_power = 0.0;
+	double base_static_power = 0.0; 
+	double lane_static_power = 0.0;
+	double per_active_core = (num_cores - num_idle_cores)/num_cores;
+
+
+	double l1_accesses = initpower_coeff[DC_RH] + initpower_coeff[DC_RM] + initpower_coeff[DC_WH] + initpower_coeff[DC_WM];
+	double l2_accesses = initpower_coeff[L2_RH] + initpower_coeff[L2_RM] + initpower_coeff[L2_WH] + initpower_coeff[L2_WM];
+	double shared_accesses = initpower_coeff[SHRD_ACC];
+
+
+	if(avg_threads_per_warp == 0){ //no functional unit threads, check for memory or a 'LIGHT_SM'
+		if(l1_accesses != 0.0)
+			return (34.79491352*per_active_core);
+		else if(shared_accesses != 0.0)
+			return (31.40965691*per_active_core);
+		else if(l2_accesses != 0.0)
+			return (17.30654755*per_active_core);
+		else //LIGHT_SM
+			return (1.965373811*per_active_core); //return LIGHT_SM base static power
+	}
+
+	/* using a linear model for thread divergence */
+	if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses != 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
+		/* INT_FP_DP */
+		base_static_power = 19.10017723;
+		lane_static_power = 0.726863055;
+	}
+
+	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses != 0.0) && (tex_accesses == 0.0)){
+		/* INT_FP_TENSOR */
+		base_static_power = 48.94875596;
+		lane_static_power = 0.0;
+	}
+
+	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses != 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
+		/* INT_FP_SFU */
+		base_static_power = 18.55029744;
+		lane_static_power = 0.6099397;
+	}
+
+	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses != 0.0)){
+		/* INT_FP_TEX */
+		base_static_power = 14.74826681;
+		lane_static_power = 0.514367937;
+	}
+
+	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
+		/* INT_FP */
+		base_static_power = 18.6179906;
+		lane_static_power = 0.645228013;
+	}
+
+	else if((int_accesses != 0.0) && (fp_accesses == 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
+		/* INT */
+		/* Seperating INT_ADD only and INT_MUL only from mix of INT instructions */
+		if((int_add_accesses != 0.0) && (int_mul_accesses == 0.0)){ //INT_ADD
+			base_static_power = 19.70468506;
+			lane_static_power = 0.388578623;
+		}
+		else if((int_add_accesses == 0.0) && (int_mul_accesses != 0.0)){ //INT_MUL
+			base_static_power = 16.64811823;
+			lane_static_power = 0.281803166;
+		}
+		else{ //INT_ADD+MUL
+			base_static_power = 15.29035866;
+			lane_static_power = 0.586233603;
+		}
+	}
+
+	else if((int_accesses == 0.0) && (fp_accesses == 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
+		/* LIGHT_SM or memory only sample */
+		lane_static_power = 0.0;
+		if(l1_accesses != 0.0)
+			base_static_power = 34.79491352;
+		else if(shared_accesses != 0.0)
+			base_static_power = 31.40965691;
+		else if(l2_accesses != 0.0)
+			base_static_power = 17.30654755;
+		else{
+			base_static_power = 1.965373811;
+			lane_static_power = 0.003966868;
+		}
+	}
+	else{
+		base_static_power = 17.21745077; //GEOMEAN except LIGHT_SM if we don't fall into any of the categories above
+		lane_static_power = 0.650630555;
+	}
+
+	total_static_power = base_static_power + (((double)avg_threads_per_warp-1.0)*lane_static_power); //Linear Model
+	return (total_static_power*per_active_core);
 }
 
 void gpgpu_sim_wrapper::update_components_power()
@@ -799,15 +914,17 @@ void gpgpu_sim_wrapper::update_components_power()
   sample_cmp_pwr[IDLE_COREP]=proc->cores[0]->IdleCoreEnergy/(proc->cores[0]->executionTime);
 
   // This constant dynamic power (e.g., clock power) part is estimated via regression model.
-  sample_cmp_pwr[CONST_DYNAMICP]=0;
+  sample_cmp_pwr[CONSTP]=0;
+  sample_cmp_pwr[STATICP]=0;
   // double cnst_dyn = proc->get_const_dynamic_power()/(proc->cores[0]->executionTime);
   // // If the regression scaling term is greater than the recorded constant dynamic power
   // // then use the difference (other portion already added to dynamic power). Else,
   // // all the constant dynamic power is accounted for, add nothing.
   // if(p->sys.scaling_coefficients[CONST_DYNAMICN] > cnst_dyn)
-  //   sample_cmp_pwr[CONST_DYNAMICP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
-  sample_cmp_pwr[CONST_DYNAMICP] = p->sys.scaling_coefficients[CONST_DYNAMICN];
-  proc_power+=sample_cmp_pwr[CONST_DYNAMICP];
+  //   sample_cmp_pwr[CONSTP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
+  sample_cmp_pwr[CONSTP] = p->sys.scaling_coefficients[CONST_DYNAMICN];
+  sample_cmp_pwr[STATICP] = calculate_static_power();
+  proc_power+=sample_cmp_pwr[CONSTP]+sample_cmp_pwr[STATICP];
   double sum_pwr_cmp=0;
   for(unsigned i=0; i<num_pwr_cmps; i++){
     sum_pwr_cmp+=sample_cmp_pwr[i];

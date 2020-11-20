@@ -154,27 +154,27 @@ void power_core_stat_t::print(FILE *fout) {
         fprintf(fout,"\tTotal INT Deocded Instructions=%u\n",m_num_INTdecoded_insn[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal LOAD Queued Instructions=%u\n",m_num_loadqueued_insn[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal STORE Queued Instructions=%u\n",m_num_storequeued_insn[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal IALU Acesses=%u\n",m_num_ialu_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal FP Acesses=%u\n",m_num_fp_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal DP Acesses=%u\n",m_num_dp_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal IMUL Acesses=%u\n",m_num_imul_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal IMUL24 Acesses=%u\n",m_num_imul24_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal IMUL32 Acesses=%u\n",m_num_imul32_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal IDIV Acesses=%u\n",m_num_idiv_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal FPMUL Acesses=%u\n",m_num_fpmul_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal DPMUL Acesses=%u\n",m_num_dpmul_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal SQRT Acesses=%u\n",m_num_sqrt_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal LOG Acesses=%u\n",m_num_log_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal SIN Acesses=%u\n",m_num_sin_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal EXP Acesses=%u\n",m_num_exp_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal FPDIV Acesses=%u\n",m_num_fpdiv_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal DPDIV Acesses=%u\n",m_num_dpdiv_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal TENSOR Acesses=%u\n",m_num_tensor_core_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal CONST Acesses=%u\n",m_num_const_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal TEX Acesses=%u\n",m_num_tex_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal SFU Acesses=%u\n",m_num_sfu_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal SP Acesses=%u\n",m_num_sp_acesses[CURRENT_STAT_IDX][i]);
-        fprintf(fout,"\tTotal MEM Acesses=%u\n",m_num_mem_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal IALU Acesses=%f\n",m_num_ialu_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal FP Acesses=%f\n",m_num_fp_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal DP Acesses=%f\n",m_num_dp_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal IMUL Acesses=%f\n",m_num_imul_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal IMUL24 Acesses=%f\n",m_num_imul24_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal IMUL32 Acesses=%f\n",m_num_imul32_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal IDIV Acesses=%f\n",m_num_idiv_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal FPMUL Acesses=%f\n",m_num_fpmul_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal DPMUL Acesses=%f\n",m_num_dpmul_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal SQRT Acesses=%f\n",m_num_sqrt_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal LOG Acesses=%f\n",m_num_log_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal SIN Acesses=%f\n",m_num_sin_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal EXP Acesses=%f\n",m_num_exp_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal FPDIV Acesses=%f\n",m_num_fpdiv_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal DPDIV Acesses=%f\n",m_num_dpdiv_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal TENSOR Acesses=%f\n",m_num_tensor_core_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal CONST Acesses=%f\n",m_num_const_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal TEX Acesses=%f\n",m_num_tex_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal SFU Acesses=%f\n",m_num_sfu_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal SP Acesses=%f\n",m_num_sp_acesses[CURRENT_STAT_IDX][i]);
+        fprintf(fout,"\tTotal MEM Acesses=%f\n",m_num_mem_acesses[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal SFU Commissions=%u\n",m_num_sfu_committed[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal SP Commissions=%u\n",m_num_sp_committed[CURRENT_STAT_IDX][i]);
         fprintf(fout,"\tTotal MEM Commissions=%u\n",m_num_mem_committed[CURRENT_STAT_IDX][i]);
@@ -219,8 +219,9 @@ void power_core_stat_t::init() {
     m_non_rf_operands[CURRENT_STAT_IDX]=m_core_stats->m_non_rf_operands;
     m_active_sp_lanes[CURRENT_STAT_IDX]=m_core_stats->m_active_sp_lanes;
     m_active_sfu_lanes[CURRENT_STAT_IDX]=m_core_stats->m_active_sfu_lanes;
+    m_active_exu_threads[CURRENT_STAT_IDX]=m_core_stats->m_active_exu_threads;
+    m_active_exu_warps[CURRENT_STAT_IDX]=m_core_stats->m_active_exu_warps;
     m_num_tex_inst[CURRENT_STAT_IDX]=m_core_stats->m_num_tex_inst;
-
 
     m_pipeline_duty_cycle[PREV_STAT_IDX]=(float*)calloc(m_config->num_shader(),sizeof(float));
     m_num_decoded_insn[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
@@ -228,28 +229,29 @@ void power_core_stat_t::init() {
     m_num_INTdecoded_insn[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_storequeued_insn[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_loadqueued_insn[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_ialu_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_fp_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_tex_inst[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_imul_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_imul24_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_imul32_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_fpmul_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_idiv_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_fpdiv_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_dp_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_dpmul_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_dpdiv_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_tensor_core_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_const_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_tex_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_sp_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_sfu_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_sqrt_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_log_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_sin_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_exp_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
-    m_num_mem_acesses[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
+
+    m_num_ialu_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_fp_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_imul_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_imul24_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_imul32_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_fpmul_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_idiv_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_fpdiv_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_dp_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_dpmul_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_dpdiv_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_tensor_core_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_const_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_tex_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_sp_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_sfu_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_sqrt_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_log_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_sin_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_exp_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_num_mem_acesses[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
     m_num_sp_committed[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_sfu_committed[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_num_mem_committed[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
@@ -258,6 +260,10 @@ void power_core_stat_t::init() {
     m_non_rf_operands[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_active_sp_lanes[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
     m_active_sfu_lanes[PREV_STAT_IDX]=(unsigned *)calloc(m_config->num_shader(),sizeof(unsigned));
+    m_active_exu_threads[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+    m_active_exu_warps[PREV_STAT_IDX]=(double *)calloc(m_config->num_shader(),sizeof(double));
+
+
 }
 
 void power_core_stat_t::save_stats() {
@@ -298,6 +304,8 @@ void power_core_stat_t::save_stats() {
     m_non_rf_operands[PREV_STAT_IDX][i]=m_non_rf_operands[CURRENT_STAT_IDX][i];
     m_active_sp_lanes[PREV_STAT_IDX][i]=m_active_sp_lanes[CURRENT_STAT_IDX][i];
     m_active_sfu_lanes[PREV_STAT_IDX][i]=m_active_sfu_lanes[CURRENT_STAT_IDX][i];
+    m_active_exu_threads[PREV_STAT_IDX][i]=m_active_exu_threads[CURRENT_STAT_IDX][i];
+    m_active_exu_warps[PREV_STAT_IDX][i]=m_active_exu_warps[CURRENT_STAT_IDX][i];
   }
 }
 

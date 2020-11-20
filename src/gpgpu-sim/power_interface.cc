@@ -90,6 +90,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
     float active_sms = (*power_stats->m_active_sms) / stat_sample_freq;
     float num_cores = shdr_config->num_shader();
     float num_idle_core = num_cores - active_sms;
+    wrapper->set_num_cores(num_cores);
     wrapper->set_idle_core_power(num_idle_core);
 
     // pipeline power - pipeline_duty_cycle *= percent_active_sms;
@@ -135,16 +136,20 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                                  power_stats->get_ialu_accessess(),
                                  power_stats->get_tot_sfu_accessess());
 
+    wrapper->set_avg_active_threads(power_stats->get_active_threads());
+
     // Average active lanes for sp and sfu pipelines
     float avg_sp_active_lanes =
         (power_stats->get_sp_active_lanes()) / stat_sample_freq;
     float avg_sfu_active_lanes =
         (power_stats->get_sfu_active_lanes()) / stat_sample_freq;
-    //assert(avg_sp_active_lanes <= 32);
-    //assert(avg_sfu_active_lanes <= 32);
-    wrapper->set_active_lanes_power(
-        (power_stats->get_sp_active_lanes()) / stat_sample_freq,
-        (power_stats->get_sfu_active_lanes()) / stat_sample_freq);
+    if(avg_sp_active_lanes >32.0 )
+      avg_sp_active_lanes = 32.0;
+    if(avg_sfu_active_lanes >32.0 )
+      avg_sfu_active_lanes = 32.0;
+    assert(avg_sp_active_lanes <= 32);
+    assert(avg_sfu_active_lanes <= 32);
+    wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
 
     double n_icnt_simt_to_mem =
         (double)

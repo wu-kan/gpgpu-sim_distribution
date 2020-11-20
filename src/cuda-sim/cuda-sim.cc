@@ -622,6 +622,7 @@ void ptx_instruction::set_mul_div_or_other_archop(){
                break;
             case MMA_OP:
                 sp_op=TENSOR__OP;
+            break;
             case TEX_OP:
                 sp_op=TEX__OP;
             break;
@@ -661,6 +662,7 @@ void ptx_instruction::set_mul_div_or_other_archop(){
                break;
             case MMA_OP:
                 sp_op=TENSOR__OP;
+            break;
             case TEX_OP:
                 sp_op=TEX__OP;
             break;
@@ -689,6 +691,7 @@ void ptx_instruction::set_mul_div_or_other_archop(){
             break;
             case MMA_OP:
                 sp_op=TENSOR__OP;
+            break;
             case TEX_OP:
                 sp_op=TEX__OP;
             break;

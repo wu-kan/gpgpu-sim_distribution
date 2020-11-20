@@ -3966,7 +3966,7 @@ void mad_def(const ptx_instruction *pI, ptx_thread_info *thread,
           fesetround(FE_TOWARDZERO);
           break;
         default:
-          assert(0);
+          //assert(0);
           break;
       }
       d.f32 = a.f32 * b.f32 + c.f32;
@@ -4312,11 +4312,8 @@ void mul_impl(const ptx_instruction *pI, ptx_thread_info *thread) {
     case S64_TYPE:
       t.s64 = a.s64 * b.s64;
       assert(!pI->is_wide());
-      assert(!pI->is_hi());
-      if (pI->is_lo())
-        d.s64 = t.s64;
-      else
-        assert(0);
+      //assert(!pI->is_hi());
+      d.s64 = t.s64;
       break;
     case U16_TYPE:
       t.u32 = ((unsigned)a.u16) * ((unsigned)b.u16);
