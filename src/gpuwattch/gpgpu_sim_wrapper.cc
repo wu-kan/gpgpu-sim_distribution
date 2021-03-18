@@ -932,6 +932,8 @@ void gpgpu_sim_wrapper::update_components_power()
 
   bool check=false;
   check=sanity_check(sum_pwr_cmp,proc_power);
+  if(!check)
+    printf("sum_pwr_cmp %f : proc_power %f \n",sum_pwr_cmp,proc_power);
   assert("Total Power does not equal the sum of the components\n" && (check));
 
 }
