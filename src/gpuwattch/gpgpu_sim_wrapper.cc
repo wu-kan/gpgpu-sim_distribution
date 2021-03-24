@@ -960,6 +960,12 @@ void gpgpu_sim_wrapper::print_power_kernel_stats(
                 << std::endl;
     }
 
+    for (unsigned i = 0; i < num_perf_counters; ++i) {
+      powerfile << "gpu_tot_" << perf_count_label[i] << " = "
+                << kernel_cmp_perf_counters[i].avg
+                << std::endl;
+    }
+
     powerfile << std::endl << "Kernel Maximum Power Data:" << std::endl;
     powerfile << "kernel_max_power = " << kernel_power.max << std::endl;
     for (unsigned i = 0; i < num_pwr_cmps; ++i) {

@@ -649,7 +649,7 @@ class power_stat_t {
 
   unsigned get_l1d_read_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_R, LOCAL_ACC_R};
-    enum cache_request_status request_status[] = {HIT, MISS, HIT_RESERVED};
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -664,7 +664,7 @@ class power_stat_t {
   }
   unsigned get_l1d_read_misses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_R, LOCAL_ACC_R};
-    enum cache_request_status request_status[] = {MISS};
+    enum cache_request_status request_status[] = {MISS, SECTOR_MISS};
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -682,7 +682,7 @@ class power_stat_t {
   }
   unsigned get_l1d_write_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W};
-    enum cache_request_status request_status[] = {HIT, MISS, HIT_RESERVED};
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -697,7 +697,7 @@ class power_stat_t {
   }
   unsigned get_l1d_write_misses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W};
-    enum cache_request_status request_status[] = {MISS};
+    enum cache_request_status request_status[] = {MISS, SECTOR_MISS};
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -737,7 +737,7 @@ class power_stat_t {
   unsigned get_l2_read_accesses() {
     enum mem_access_type access_type[] = {
         GLOBAL_ACC_R, LOCAL_ACC_R, CONST_ACC_R, TEXTURE_ACC_R, INST_ACC_R};
-    enum cache_request_status request_status[] = {HIT, MISS, HIT_RESERVED};
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -754,7 +754,7 @@ class power_stat_t {
   unsigned get_l2_read_misses() {
     enum mem_access_type access_type[] = {
         GLOBAL_ACC_R, LOCAL_ACC_R, CONST_ACC_R, TEXTURE_ACC_R, INST_ACC_R};
-    enum cache_request_status request_status[] = {MISS};
+    enum cache_request_status request_status[] = {MISS, SECTOR_MISS};
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -775,7 +775,7 @@ class power_stat_t {
   unsigned get_l2_write_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,
                                           L1_WRBK_ACC};
-    enum cache_request_status request_status[] = {HIT, MISS, HIT_RESERVED};
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -792,7 +792,7 @@ class power_stat_t {
   unsigned get_l2_write_misses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,
                                           L1_WRBK_ACC};
-    enum cache_request_status request_status[] = {MISS};
+    enum cache_request_status request_status[] = {MISS, SECTOR_MISS};
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -859,7 +859,7 @@ class power_stat_t {
   unsigned get_dram_wr() {
     unsigned total = 0;
     for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
-      total += (pwr_mem_stat->n_wr[CURRENT_STAT_IDX][i] -
+      total += (pwr_mem_stat->n_wr[CURRENT_STAT_IDX][i] - // use n_wr_WB + n_wr;
                 pwr_mem_stat->n_wr[PREV_STAT_IDX][i]);
     }
     return total;
