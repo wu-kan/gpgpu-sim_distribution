@@ -135,7 +135,7 @@ class dram_t {
   // Power Model
   void set_dram_power_stats(unsigned &cmd, unsigned &activity, unsigned &nop,
                             unsigned &act, unsigned &pre, unsigned &rd,
-                            unsigned &wr, unsigned &req) const;
+                            unsigned &wr, unsigned &wr_WB, unsigned &req) const;
 
   const memory_config *m_config;
 

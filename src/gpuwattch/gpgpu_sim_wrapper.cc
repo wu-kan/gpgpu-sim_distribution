@@ -81,7 +81,7 @@ gpgpu_sim_wrapper::gpgpu_sim_wrapper(bool power_simulation_enabled,
   total_sample_count = 0;
 
   kernel_tot_power = 0;
-
+  avg_threads_per_warp_tot = 0;
   num_pwr_cmps = NUM_COMPONENTS_MODELLED;
   num_perf_counters = NUM_PERFORMANCE_COUNTERS;
 
@@ -497,7 +497,7 @@ void gpgpu_sim_wrapper::set_tex_accesses(double tex_accesses)
 void gpgpu_sim_wrapper::set_avg_active_threads(float active_threads)
 {
   avg_threads_per_warp = (unsigned)ceil(active_threads);
-
+  avg_threads_per_warp_tot += active_threads;
 }
 
 void gpgpu_sim_wrapper::set_active_lanes_power(double sp_avg_active_lane,
@@ -959,6 +959,10 @@ void gpgpu_sim_wrapper::print_power_kernel_stats(
                 << kernel_cmp_perf_counters[i].avg / kernel_sample_count
                 << std::endl;
     }
+
+    powerfile << "gpu_avg_threads_per_warp = "
+                << avg_threads_per_warp_tot / (double)kernel_sample_count
+                << std::endl;
 
     for (unsigned i = 0; i < num_perf_counters; ++i) {
       powerfile << "gpu_tot_" << perf_count_label[i] << " = "

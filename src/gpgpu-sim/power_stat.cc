@@ -71,6 +71,7 @@ void power_mem_stat_t::init() {
     n_pre[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
     n_rd[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
     n_wr[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
+    n_wr_WB[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
     n_req[i] = (unsigned *)calloc(m_config->m_n_mem, sizeof(unsigned));
 
     // Interconnect stats
@@ -98,6 +99,7 @@ void power_mem_stat_t::save_stats() {
     n_pre[PREV_STAT_IDX][i] = n_pre[CURRENT_STAT_IDX][i];
     n_rd[PREV_STAT_IDX][i] = n_rd[CURRENT_STAT_IDX][i];
     n_wr[PREV_STAT_IDX][i] = n_wr[CURRENT_STAT_IDX][i];
+    n_wr_WB[PREV_STAT_IDX][i] = n_wr_WB[CURRENT_STAT_IDX][i];
     n_req[PREV_STAT_IDX][i] = n_req[CURRENT_STAT_IDX][i];
   }
 
@@ -117,7 +119,7 @@ void power_mem_stat_t::print(FILE *fout) const {
   unsigned total_mem_writes = 0;
   for (unsigned i = 0; i < m_config->m_n_mem; ++i) {
     total_mem_reads += n_rd[CURRENT_STAT_IDX][i];
-    total_mem_writes += n_wr[CURRENT_STAT_IDX][i];
+    total_mem_writes += n_wr[CURRENT_STAT_IDX][i] + n_wr_WB[CURRENT_STAT_IDX][i];
   }
   fprintf(fout, "Total memory controller accesses: %u\n",
           total_mem_reads + total_mem_writes);

@@ -150,6 +150,7 @@ class gpgpu_sim_wrapper {
   ParseXML* p;
   // power parameters
   double const_dynamic_power;
+  double avg_threads_per_warp_tot;
   double proc_power;
   double num_cores;
   double num_idle_cores;

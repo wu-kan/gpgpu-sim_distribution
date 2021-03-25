@@ -1792,6 +1792,7 @@ void gpgpu_sim::cycle() {
           m_power_stats->pwr_mem_stat->n_pre[CURRENT_STAT_IDX][i],
           m_power_stats->pwr_mem_stat->n_rd[CURRENT_STAT_IDX][i],
           m_power_stats->pwr_mem_stat->n_wr[CURRENT_STAT_IDX][i],
+          m_power_stats->pwr_mem_stat->n_wr_WB[CURRENT_STAT_IDX][i],
           m_power_stats->pwr_mem_stat->n_req[CURRENT_STAT_IDX][i]);
     }
   }

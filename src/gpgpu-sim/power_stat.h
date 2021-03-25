@@ -117,6 +117,7 @@ struct mem_power_stats_pod {
   unsigned *n_pre[NUM_STAT_IDX];
   unsigned *n_rd[NUM_STAT_IDX];
   unsigned *n_wr[NUM_STAT_IDX];
+  unsigned *n_wr_WB[NUM_STAT_IDX];
   unsigned *n_req[NUM_STAT_IDX];
 
   // Interconnect stats
@@ -476,7 +477,10 @@ class power_stat_t {
       total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]) -
                     (pwr_core_stat->m_active_exu_warps[PREV_STAT_IDX][i]);
     }
-    return (float)((float)total_threads / (float)total_warps);
+    if(total_warps != 0)
+      return (float)((float)total_threads / (float)total_warps);
+    else
+      return 0;
   }
 
 
@@ -859,8 +863,10 @@ class power_stat_t {
   unsigned get_dram_wr() {
     unsigned total = 0;
     for (unsigned i = 0; i < m_mem_config->m_n_mem; ++i) {
-      total += (pwr_mem_stat->n_wr[CURRENT_STAT_IDX][i] - // use n_wr_WB + n_wr;
-                pwr_mem_stat->n_wr[PREV_STAT_IDX][i]);
+      total += (pwr_mem_stat->n_wr[CURRENT_STAT_IDX][i] - 
+                pwr_mem_stat->n_wr[PREV_STAT_IDX][i]) +
+                (pwr_mem_stat->n_wr_WB[CURRENT_STAT_IDX][i] - 
+                pwr_mem_stat->n_wr_WB[PREV_STAT_IDX][i]);
     }
     return total;
   }

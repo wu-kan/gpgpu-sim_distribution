@@ -855,7 +855,7 @@ void dram_t::visualizer_print(gzFile visualizer_file) {
 
 void dram_t::set_dram_power_stats(unsigned &cmd, unsigned &activity,
                                   unsigned &nop, unsigned &act, unsigned &pre,
-                                  unsigned &rd, unsigned &wr,
+                                  unsigned &rd, unsigned &wr, unsigned &wr_WB,
                                   unsigned &req) const {
   // Point power performance counters to low-level DRAM counters
   cmd = n_cmd;
@@ -865,6 +865,7 @@ void dram_t::set_dram_power_stats(unsigned &cmd, unsigned &activity,
   pre = n_pre;
   rd = n_rd;
   wr = n_wr;
+  wr_WB = n_wr_WB;
   req = n_req;
 }
 
