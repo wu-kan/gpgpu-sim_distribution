@@ -249,7 +249,7 @@ void gpgpu_sim_wrapper::reset_counters() {
   kernel_sample_count = 0;
   kernel_tot_power = 0;
   kernel_power = init;
-
+  avg_threads_per_warp_tot = 0;
   return;
 }
 

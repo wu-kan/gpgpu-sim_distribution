@@ -653,7 +653,7 @@ class power_stat_t {
 
   unsigned get_l1d_read_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_R, LOCAL_ACC_R};
-    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS}; 
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -686,7 +686,7 @@ class power_stat_t {
   }
   unsigned get_l1d_write_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W};
-    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS}; 
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -741,7 +741,7 @@ class power_stat_t {
   unsigned get_l2_read_accesses() {
     enum mem_access_type access_type[] = {
         GLOBAL_ACC_R, LOCAL_ACC_R, CONST_ACC_R, TEXTURE_ACC_R, INST_ACC_R};
-    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS}; 
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
@@ -779,7 +779,7 @@ class power_stat_t {
   unsigned get_l2_write_accesses() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,
                                           L1_WRBK_ACC};
-    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS, MSHR_HIT}; //replace HIT_RESERVED with MSHR_HIT
+    enum cache_request_status request_status[] = {HIT, MISS, SECTOR_MISS}; 
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
