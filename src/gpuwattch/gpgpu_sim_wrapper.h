@@ -81,7 +81,7 @@ struct PowerscalingCoefficients{
 
 class gpgpu_sim_wrapper {
  public:
-  gpgpu_sim_wrapper(bool power_simulation_enabled, char* xmlfile);
+  gpgpu_sim_wrapper(bool power_simulation_enabled, char* xmlfile, int power_simulation_mode);
   ~gpgpu_sim_wrapper();
 
   void init_mcpat(char* xmlfile, char* powerfile, char* power_trace_file,
@@ -89,7 +89,8 @@ class gpgpu_sim_wrapper {
                   bool power_sim_enabled, bool trace_enabled,
                   bool steady_state_enabled, bool power_per_cycle_dump,
                   double steady_power_deviation, double steady_min_period,
-                  int zlevel, double init_val, int stat_sample_freq);
+                  int zlevel, double init_val, int stat_sample_freq, int power_sim_mode);
+  void init_mcpat_hw_mode(unsigned gpu_sim_cycle);
   void detect_print_steady_state(int position, double init_val);
   void close_files();
   void open_files();
@@ -138,7 +139,7 @@ class gpgpu_sim_wrapper {
   void set_avg_active_threads(float active_threads);
   void set_active_lanes_power(double sp_avg_active_lane,
                               double sfu_avg_active_lane);
-  void set_NoC_power(double noc_tot_reads, double noc_tot_write);
+  void set_NoC_power(double noc_tot_acc);
   bool sanity_check(double a, double b);
 
   PowerscalingCoefficients * get_scaling_coeffs();
@@ -196,6 +197,7 @@ class gpgpu_sim_wrapper {
   char* g_metric_trace_filename;
   char* g_steady_state_tracking_filename;
   bool g_power_simulation_enabled;
+  int g_power_simulation_mode;
   bool g_steady_power_levels_enabled;
   bool g_power_trace_enabled;
   bool g_power_per_cycle_dump;

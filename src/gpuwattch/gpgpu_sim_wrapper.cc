@@ -76,7 +76,7 @@ enum pwr_cmp_t {
 };
 
 gpgpu_sim_wrapper::gpgpu_sim_wrapper(bool power_simulation_enabled,
-                                     char* xmlfile) {
+                                     char* xmlfile, int power_simulation_mode) {
   kernel_sample_count = 0;
   total_sample_count = 0;
 
@@ -108,6 +108,7 @@ gpgpu_sim_wrapper::gpgpu_sim_wrapper(bool power_simulation_enabled,
   g_steady_state_tracking_filename = NULL;
   xml_filename = xmlfile;
   g_power_simulation_enabled = power_simulation_enabled;
+  g_power_simulation_mode = power_simulation_mode;
   g_power_trace_enabled = false;
   g_steady_power_levels_enabled = false;
   g_power_trace_zlevel = 0;
@@ -138,13 +139,17 @@ bool gpgpu_sim_wrapper::sanity_check(double a, double b) {
 
   return false;
 }
+void gpgpu_sim_wrapper::init_mcpat_hw_mode(unsigned gpu_sim_cycle) {
+   p->sys.total_cycles = gpu_sim_cycle; //total simulated cycles for current kernel
+}
+
 void gpgpu_sim_wrapper::init_mcpat(
     char* xmlfile, char* powerfilename, char* power_trace_filename,
     char* metric_trace_filename, char* steady_state_filename,
     bool power_sim_enabled, bool trace_enabled, bool steady_state_enabled,
     bool power_per_cycle_dump, double steady_power_deviation,
     double steady_min_period, int zlevel, double init_val,
-    int stat_sample_freq) {
+    int stat_sample_freq, int power_sim_mode) {
   // Write File Headers for (-metrics trace, -power trace)
 
   reset_counters();
@@ -168,6 +173,7 @@ void gpgpu_sim_wrapper::init_mcpat(
     g_steady_state_tracking_filename = steady_state_filename;
     xml_filename = xmlfile;
     g_power_simulation_enabled = power_sim_enabled;
+    g_power_simulation_mode = power_sim_mode;
     g_power_trace_enabled = trace_enabled;
     g_steady_power_levels_enabled = steady_state_enabled;
     g_power_trace_zlevel = zlevel;
@@ -506,12 +512,10 @@ void gpgpu_sim_wrapper::set_active_lanes_power(double sp_avg_active_lane,
   p->sys.core[0].sfu_average_active_lanes = sfu_avg_active_lane;
 }
 
-void gpgpu_sim_wrapper::set_NoC_power(double noc_tot_reads,
-                                      double noc_tot_writes) {
+void gpgpu_sim_wrapper::set_NoC_power(double noc_tot_acc) {
   p->sys.NoC[0].total_accesses =
-      noc_tot_reads * p->sys.scaling_coefficients[NOC_A] +
-      noc_tot_writes * p->sys.scaling_coefficients[NOC_A];
-  sample_perf_counters[NOC_A] = noc_tot_reads + noc_tot_writes;
+      noc_tot_acc * p->sys.scaling_coefficients[NOC_A];
+  sample_perf_counters[NOC_A] = noc_tot_acc;
 }
 
 void gpgpu_sim_wrapper::power_metrics_calculations() {

@@ -126,6 +126,12 @@ struct power_config {
   double gpu_steady_power_deviation;
   double gpu_steady_min_period;
 
+
+  char *g_hw_perf_file_name;
+  char *g_hw_perf_kernel_name;
+  int g_power_simulation_mode;
+
+
   // Nonlinear power model
   bool g_use_nonlinear_model;
   char *gpu_nonlinear_model_config;
@@ -636,6 +642,7 @@ class gpgpu_sim : public gpgpu_t {
 
   std::string executed_kernel_info_string();  //< format the kernel information
                                               // into a string for stat printout
+  std::string executed_kernel_name();
   void clear_executed_kernel_info();  //< clear the kernel information after
                                       // stat printout
   virtual void createSIMTCluster() = 0;

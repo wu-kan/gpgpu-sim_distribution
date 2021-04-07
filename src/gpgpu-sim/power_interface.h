@@ -44,6 +44,15 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                  class power_stat_t *power_stats, unsigned stat_sample_freq,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
                  unsigned inst);
+
+void calculate_hw_mcpat(const gpgpu_sim_config &config,
+                 const shader_core_config *shdr_config,
+                 class gpgpu_sim_wrapper *wrapper,
+                 class power_stat_t *power_stats, unsigned stat_sample_freq,
+                 unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
+                 unsigned inst, int power_simulation_mode, char* hwpowerfile, char* kernelname, std::string executed_kernelname);
+
+
 void mcpat_reset_perf_count(class gpgpu_sim_wrapper *wrapper);
 
 #endif /* POWER_INTERFACE_H_ */
