@@ -54,6 +54,60 @@ power_mem_stat_t::power_mem_stat_t(const memory_config *mem_config,
   init();
 }
 
+void power_stat_t::clear(){
+  for(unsigned i=0; i< NUM_STAT_IDX; ++i){
+    pwr_mem_stat->core_cache_stats[i].clear();
+    pwr_mem_stat->l2_cache_stats[i].clear();
+    for(unsigned j=0; j<m_config->num_shader(); ++j){
+      pwr_core_stat->m_pipeline_duty_cycle[i][j]=0;                
+      pwr_core_stat->m_num_decoded_insn[i][j]=0;
+      pwr_core_stat->m_num_FPdecoded_insn[i][j]=0;
+      pwr_core_stat->m_num_INTdecoded_insn[i][j]=0;
+      pwr_core_stat->m_num_storequeued_insn[i][j]=0;
+      pwr_core_stat->m_num_loadqueued_insn[i][j]=0;
+      pwr_core_stat->m_num_tex_inst[i][j]=0;
+      pwr_core_stat->m_num_ialu_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_fp_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_imul_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_imul24_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_imul32_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_fpmul_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_idiv_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_fpdiv_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_dp_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_dpmul_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_dpdiv_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_tensor_core_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_const_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_tex_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_sp_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_sfu_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_sqrt_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_log_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_sin_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_exp_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_mem_acesses[i][j]=0;                   
+      pwr_core_stat->m_num_sp_committed[i][j]=0;
+      pwr_core_stat->m_num_sfu_committed[i][j]=0;
+      pwr_core_stat->m_num_mem_committed[i][j]=0;
+      pwr_core_stat->m_read_regfile_acesses[i][j]=0;
+      pwr_core_stat->m_write_regfile_acesses[i][j]=0;
+      pwr_core_stat->m_non_rf_operands[i][j]=0;
+      pwr_core_stat->m_active_sp_lanes[i][j]=0;
+      pwr_core_stat->m_active_sfu_lanes[i][j]=0;
+      pwr_core_stat->m_active_exu_threads[i][j]=0;                   
+      pwr_core_stat->m_active_exu_warps[i][j]=0;
+    }
+    for (unsigned j = 0; j < m_mem_config->m_n_mem; ++j) {
+      pwr_mem_stat->n_rd[i][j]=0;
+      pwr_mem_stat->n_wr[i][j]=0;
+      pwr_mem_stat->n_pre[i][j]=0;
+    }
+  }
+}
+
+
+
 void power_mem_stat_t::init() {
   shmem_read_access[CURRENT_STAT_IDX] =
       m_core_stats->gpgpu_n_shmem_bank_access;  // Shared memory access
@@ -325,6 +379,8 @@ power_stat_t::power_stat_t(const shader_core_config *shader_config,
   m_active_sms = active_sms;
   m_config = shader_config;
   m_mem_config = mem_config;
+  l1i_hits_kernel =0;
+  l1i_misses_kernel =0;
 }
 
 void power_stat_t::visualizer_print(gzFile visualizer_file) {

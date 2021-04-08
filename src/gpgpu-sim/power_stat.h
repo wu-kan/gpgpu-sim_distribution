@@ -95,6 +95,7 @@ class power_core_stat_t : public shader_core_power_stats_pod {
   void print(FILE *fout);
   void init();
   void save_stats();
+ 
 
  private:
   shader_core_stats *m_core_stats;
@@ -108,7 +109,6 @@ struct mem_power_stats_pod {
   class cache_stats l2_cache_stats[NUM_STAT_IDX];    // Total L2 partition stats
 
   unsigned *shmem_read_access[NUM_STAT_IDX];  // Shared memory access
-
   // Low level DRAM stats
   unsigned *n_cmd[NUM_STAT_IDX];
   unsigned *n_activity[NUM_STAT_IDX];
@@ -156,7 +156,9 @@ class power_stat_t {
     *m_average_pipeline_duty_cycle = 0;
     *m_active_sms = 0;
   }
-
+  void clear();
+  unsigned l1i_misses_kernel;
+  unsigned l1i_hits_kernel;
   unsigned get_total_inst(bool aggregate_stat) {
     double total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
@@ -542,14 +544,20 @@ class power_stat_t {
   }
 
 
-  float get_active_threads() {
+  float get_active_threads(bool aggregate_stat) {
     unsigned total_threads = 0;
     unsigned total_warps = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
-      total_threads += (pwr_core_stat->m_active_exu_threads[CURRENT_STAT_IDX][i]) -
+      if(aggregate_stat){
+        total_threads += (pwr_core_stat->m_active_exu_threads[CURRENT_STAT_IDX][i]) ;
+        total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]);
+      }
+      else{
+        total_threads += (pwr_core_stat->m_active_exu_threads[CURRENT_STAT_IDX][i]) -
                     (pwr_core_stat->m_active_exu_threads[PREV_STAT_IDX][i]);
-      total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]) -
+        total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]) -
                     (pwr_core_stat->m_active_exu_warps[PREV_STAT_IDX][i]);
+        }
     }
     if(total_warps != 0)
       return (float)((float)total_threads / (float)total_warps);
@@ -776,7 +784,7 @@ class power_stat_t {
     return (get_l1d_read_accesses() - get_l1d_read_hits());
   }
   unsigned get_l1d_read_hits() {
-  	enum mem_access_type access_type[] = {GLOBAL_ACC_R, LOCAL_ACC_R};
+    enum mem_access_type access_type[] = {GLOBAL_ACC_R, LOCAL_ACC_R};
     enum cache_request_status request_status[] = {HIT, MSHR_HIT};
     unsigned num_access_type =
         sizeof(access_type) / sizeof(enum mem_access_type);
@@ -806,7 +814,7 @@ class power_stat_t {
                num_request_status));
   }
   unsigned get_l1d_write_misses() {
-  	return (get_l1d_write_accesses() - get_l1d_write_hits());
+    return (get_l1d_write_accesses() - get_l1d_write_hits());
   }
   unsigned get_l1d_write_hits() {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W};
@@ -862,7 +870,7 @@ class power_stat_t {
   }
 
   unsigned get_l2_read_misses() {
-  	return (get_l2_read_accesses() - get_l2_read_hits());
+    return (get_l2_read_accesses() - get_l2_read_hits());
   }
 
   unsigned get_l2_read_hits() {
@@ -900,7 +908,7 @@ class power_stat_t {
   }
 
   unsigned get_l2_write_misses() {
-  	return (get_l2_write_accesses() - get_l2_write_hits());
+    return (get_l2_write_accesses() - get_l2_write_hits());
   }
   unsigned get_l2_write_hits() {
         enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,

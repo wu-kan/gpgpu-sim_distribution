@@ -155,7 +155,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                                  power_stats->get_ialu_accessess(0),
                                  power_stats->get_tot_sfu_accessess(0));
 
-    wrapper->set_avg_active_threads(power_stats->get_active_threads());
+    wrapper->set_avg_active_threads(power_stats->get_active_threads(0));
 
     // Average active lanes for sp and sfu pipelines
     float avg_sp_active_lanes =
@@ -208,74 +208,72 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                  unsigned inst, int power_simulation_mode, char* hwpowerfile, char* kernelname, std::string executed_kernelname){
 
 
-	/* Finding the correct kernel name for HW data CSV file  */
-	char* current_kernelname;
-	if(kernelname == "b+tree-rodinia-3.1"){
-		if(executed_kernelname == "findRangeK")
-			current_kernelname = "b+tree-rodinia-3.1_k1";
-		else
-			current_kernelname = "b+tree-rodinia-3.1_k2";
-	} 
+  /* Finding the correct kernel name for HW data CSV file  */
+  std::string current_kernelname;
+  if(std::string(kernelname) == "b+tree-rodinia-3.1"){
+    if(executed_kernelname == "findRangeK")
+      current_kernelname = "b+tree-rodinia-3.1_k1";
+    else
+      current_kernelname = "b+tree-rodinia-3.1_k2";
+  } 
 
-	else if(kernelname == "backprop-rodinia-3.1"){
-		if(executed_kernelname == "_Z22bpnn_layerforward_CUDAPfS_S_S_ii")
-			current_kernelname = "backprop-rodinia-3.1_k1";
-		else
-			current_kernelname = "backprop-rodinia-3.1_k2";
-	} 	
+  else if(std::string(kernelname) == "backprop-rodinia-3.1"){
+    if(executed_kernelname == "_Z22bpnn_layerforward_CUDAPfS_S_S_ii")
+      current_kernelname = "backprop-rodinia-3.1_k1";
+    else
+      current_kernelname = "backprop-rodinia-3.1_k2";
+  }   
 
-	else if(kernelname == "dct8x8"){
-		if(executed_kernelname == "_Z14CUDAkernel1DCTPfiiiy")
-			current_kernelname = "dct8x8_k1";
-		else
-			current_kernelname = "dct8x8_k2";
-	} 
+  else if(std::string(kernelname) == "dct8x8"){
+    if(executed_kernelname == "_Z14CUDAkernel1DCTPfiiiy")
+      current_kernelname = "dct8x8_k1";
+    else
+      current_kernelname = "dct8x8_k2";
+  } 
 
-	else if(kernelname == "fastWalshTransform"){
-		if(executed_kernelname == "_Z15fwtBatch2KernelPfS_i")
-			current_kernelname = "fastWalshTransform_k1";
-		else
-			current_kernelname = "fastWalshTransform_k2";
-	} 
+  else if(std::string(kernelname) == "fastWalshTransform"){
+    if(executed_kernelname == "_Z15fwtBatch2KernelPfS_i")
+      current_kernelname = "fastWalshTransform_k1";
+    else
+      current_kernelname = "fastWalshTransform_k2";
+  } 
 
-	else if(kernelname == "mergeSort"){
-		if(executed_kernelname == "_Z30mergeElementaryIntervalsKernelILj1EEvPjS0_S0_S0_S0_S0_jj")
-			current_kernelname = "mergeSort_k1";
-		else
-			current_kernelname = "mergeSort_k2";
-	} 
+  else if(std::string(kernelname) == "mergeSort"){
+    if(executed_kernelname == "_Z30mergeElementaryIntervalsKernelILj1EEvPjS0_S0_S0_S0_S0_jj")
+      current_kernelname = "mergeSort_k1";
+    else
+      current_kernelname = "mergeSort_k2";
+  } 
 
-	else if(kernelname == "quasirandomGenerator"){
-		if(executed_kernelname == "_Z26quasirandomGeneratorKernelPfjj")
-			current_kernelname = "quasirandomGenerator_k1";
-		else
-			current_kernelname = "quasirandomGenerator_k2";
-	} 
-	else
-		current_kernelname = kernelname;
-
-
-
-	/* Reading HW data from CSV file */
-	fstream hw_file;
-	hw_file.open(hwpowerfile, ios::in);
-	vector<string> hw_data;
+  else if(std::string(kernelname) == "quasirandomGenerator"){
+    if(executed_kernelname == "_Z26quasirandomGeneratorKernelPfjj")
+      current_kernelname = "quasirandomGenerator_k1";
+    else
+      current_kernelname = "quasirandomGenerator_k2";
+  } 
+  else
+    current_kernelname = std::string(kernelname);
+  cout<<"Searching for HW_perf data for kernel: "<<current_kernelname<<" : "<<executed_kernelname<<endl;
+  /* Reading HW data from CSV file */
+  fstream hw_file;
+  hw_file.open(hwpowerfile, ios::in);
+  vector<string> hw_data;
     string line, word, temp;
     bool kernel_found = false;
     while(!hw_file.eof()){
-    	hw_data.clear();
-    	getline(hw_file, line);
-    	stringstream s(line);
-    	while (getline(s,word,',')){
-    		hw_data.push_back(word);
-    	}
-	    if(hw_data[HW_BENCH_NAME] == current_kernelname){
-	    	kernel_found = true;
-	    	break;
-	    }
-	}
-	assert(kernel_found);
-	wrapper->init_mcpat_hw_mode(cycle); //total simulated cycles for current kernel
+      hw_data.clear();
+      getline(hw_file, line);
+      stringstream s(line);
+      while (getline(s,word,',')){
+        hw_data.push_back(word);
+      }
+      if(hw_data[HW_BENCH_NAME] == current_kernelname){
+        kernel_found = true;
+        break;
+      }
+  }
+  assert(kernel_found);
+  wrapper->init_mcpat_hw_mode(cycle); //total simulated cycles for current kernel
 
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, cycle,
@@ -291,8 +289,8 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                                power_stats->get_non_regfile_operands(1));
 
     // Instruction cache stats
-    wrapper->set_icache_power(power_stats->get_inst_c_hits(1),
-                              power_stats->get_inst_c_misses(1));
+    wrapper->set_icache_power(power_stats->get_inst_c_hits(1) - power_stats->l1i_hits_kernel,
+                              power_stats->get_inst_c_misses(1) - power_stats->l1i_misses_kernel);
 
     // Constant Cache, shared memory, texture cache
     wrapper->set_ccache_power(std::stod(hw_data[HW_CC]), 0); //assuming all HITS in constant cache for now
@@ -324,15 +322,15 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
 
     // Memory Controller
     if(power_simulation_mode == 1)
-    	wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
+      wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
                                 std::stod(hw_data[HW_DRAM_WR]),
                                 0);
     else if(power_simulation_mode == 2)
-    	wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
+      wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
                                 std::stod(hw_data[HW_DRAM_WR]),
                                 power_stats->get_dram_pre());
     else
-    	assert(power_simulation_mode>0 && power_simulation_mode<3);
+      assert(power_simulation_mode>0 && power_simulation_mode<3);
     // Execution pipeline accesses
     // FPU (SP) accesses, Integer ALU (not present in Tesla), Sfu accesses
 
@@ -363,7 +361,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                                  power_stats->get_ialu_accessess(1),
                                  power_stats->get_tot_sfu_accessess(1));
 
-    wrapper->set_avg_active_threads(power_stats->get_active_threads());
+    wrapper->set_avg_active_threads(power_stats->get_active_threads(1));
 
     // Average active lanes for sp and sfu pipelines
     float avg_sp_active_lanes =
@@ -395,5 +393,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     wrapper->power_metrics_calculations();
 
     wrapper->dump();
-
+    power_stats->l1i_hits_kernel = power_stats->get_inst_c_hits(1);
+    power_stats->l1i_misses_kernel = power_stats->get_inst_c_misses(1);
+    power_stats->clear();
 }

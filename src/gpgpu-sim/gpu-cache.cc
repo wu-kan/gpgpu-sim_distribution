@@ -612,6 +612,7 @@ void cache_stats::clear() {
   ///
   for (unsigned i = 0; i < NUM_MEM_ACCESS_TYPE; ++i) {
     std::fill(m_stats[i].begin(), m_stats[i].end(), 0);
+    std::fill(m_stats_pw[i].begin(), m_stats_pw[i].end(), 0);
     std::fill(m_fail_stats[i].begin(), m_fail_stats[i].end(), 0);
   }
   m_cache_port_available_cycles = 0;
