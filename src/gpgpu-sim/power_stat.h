@@ -159,6 +159,10 @@ class power_stat_t {
   void clear();
   unsigned l1i_misses_kernel;
   unsigned l1i_hits_kernel;
+  unsigned long long l2r_hits_kernel;
+  unsigned long long l2r_misses_kernel;
+  unsigned long long l2w_hits_kernel;
+  unsigned long long l2w_misses_kernel;
   unsigned get_total_inst(bool aggregate_stat) {
     double total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
@@ -852,7 +856,7 @@ class power_stat_t {
     return total_inst;
   }
 
-  unsigned get_l2_read_accesses() {
+  unsigned long long  get_l2_read_accesses(bool aggregate_stat) {
     enum mem_access_type access_type[] = {
         GLOBAL_ACC_R, LOCAL_ACC_R, CONST_ACC_R, TEXTURE_ACC_R, INST_ACC_R};
     enum cache_request_status request_status[] = {HIT, HIT_RESERVED, MISS, SECTOR_MISS}; 
@@ -860,20 +864,26 @@ class power_stat_t {
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
         sizeof(request_status) / sizeof(enum cache_request_status);
-
-    return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+    if(aggregate_stat){
+       return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+               access_type, num_access_type, request_status,
+               num_request_status));
+    }
+    else{
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status)) -
            (pwr_mem_stat->l2_cache_stats[PREV_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status));
+    }
   }
 
-  unsigned get_l2_read_misses() {
-    return (get_l2_read_accesses() - get_l2_read_hits());
+  unsigned long long get_l2_read_misses(bool aggregate_stat) {
+    return (get_l2_read_accesses(aggregate_stat) - get_l2_read_hits(aggregate_stat));
   }
 
-  unsigned get_l2_read_hits() {
+  unsigned long long get_l2_read_hits(bool aggregate_stat) {
        enum mem_access_type access_type[] = {
         GLOBAL_ACC_R, LOCAL_ACC_R, CONST_ACC_R, TEXTURE_ACC_R, INST_ACC_R};
     enum cache_request_status request_status[] =  {HIT, HIT_RESERVED};
@@ -881,16 +891,22 @@ class power_stat_t {
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
         sizeof(request_status) / sizeof(enum cache_request_status);
-
-    return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+    if(aggregate_stat){
+       return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+               access_type, num_access_type, request_status,
+               num_request_status));
+    }
+    else{
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status)) -
            (pwr_mem_stat->l2_cache_stats[PREV_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status));
+    }
   }
 
-  unsigned get_l2_write_accesses() {
+  unsigned long long get_l2_write_accesses(bool aggregate_stat) {
     enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,
                                           L1_WRBK_ACC};
     enum cache_request_status request_status[] = {HIT, HIT_RESERVED, MISS, SECTOR_MISS}; 
@@ -898,19 +914,25 @@ class power_stat_t {
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
         sizeof(request_status) / sizeof(enum cache_request_status);
-
-    return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+    if(aggregate_stat){
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+               access_type, num_access_type, request_status,
+               num_request_status));
+    }
+    else{
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status)) -
            (pwr_mem_stat->l2_cache_stats[PREV_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status));
+    }
   }
 
-  unsigned get_l2_write_misses() {
-    return (get_l2_write_accesses() - get_l2_write_hits());
+  unsigned long long get_l2_write_misses(bool aggregate_stat) {
+    return (get_l2_write_accesses(aggregate_stat) - get_l2_write_hits(aggregate_stat));
   }
-  unsigned get_l2_write_hits() {
+  unsigned long long get_l2_write_hits(bool aggregate_stat) {
         enum mem_access_type access_type[] = {GLOBAL_ACC_W, LOCAL_ACC_W,
                                           L1_WRBK_ACC};
     enum cache_request_status request_status[] = {HIT, HIT_RESERVED};
@@ -918,13 +940,19 @@ class power_stat_t {
         sizeof(access_type) / sizeof(enum mem_access_type);
     unsigned num_request_status =
         sizeof(request_status) / sizeof(enum cache_request_status);
-
-    return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+    if(aggregate_stat){
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
+               access_type, num_access_type, request_status,
+               num_request_status));
+    }
+    else{
+      return (pwr_mem_stat->l2_cache_stats[CURRENT_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status)) -
            (pwr_mem_stat->l2_cache_stats[PREV_STAT_IDX].get_stats(
                access_type, num_access_type, request_status,
                num_request_status));
+    }
   }
   unsigned get_dram_cmd() {
     unsigned total = 0;
@@ -993,20 +1021,31 @@ class power_stat_t {
     return total;
   }
 
-  long get_icnt_simt_to_mem() {
+  long get_icnt_simt_to_mem(bool aggregate_stat) {
     long total = 0;
-    for (unsigned i = 0; i < m_config->n_simt_clusters; ++i) {
-      total += (pwr_mem_stat->n_simt_to_mem[CURRENT_STAT_IDX][i] -
+    for (unsigned i = 0; i < m_config->n_simt_clusters; ++i){
+      if(aggregate_stat){
+        total += pwr_mem_stat->n_simt_to_mem[CURRENT_STAT_IDX][i];
+      }
+      else{
+        total += (pwr_mem_stat->n_simt_to_mem[CURRENT_STAT_IDX][i] -
                 pwr_mem_stat->n_simt_to_mem[PREV_STAT_IDX][i]);
+      }
     }
     return total;
   }
 
-  long get_icnt_mem_to_simt() {
+  long get_icnt_mem_to_simt(bool aggregate_stat) {
     long total = 0;
     for (unsigned i = 0; i < m_config->n_simt_clusters; ++i) {
-      total += (pwr_mem_stat->n_mem_to_simt[CURRENT_STAT_IDX][i] -
+      if(aggregate_stat){
+        total += pwr_mem_stat->n_mem_to_simt[CURRENT_STAT_IDX][i];
+      }
+      
+      else{
+        total += (pwr_mem_stat->n_mem_to_simt[CURRENT_STAT_IDX][i] -
                 pwr_mem_stat->n_mem_to_simt[PREV_STAT_IDX][i]);
+      }
     }
     return total;
   }

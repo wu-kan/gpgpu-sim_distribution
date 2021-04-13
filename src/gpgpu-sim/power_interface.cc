@@ -44,7 +44,8 @@ enum hw_perf_t {
   HW_L2_WM,
   HW_NOC,
   HW_PIPE_DUTY,
-  HW_NUM_SM_IDLE
+  HW_NUM_SM_IDLE,
+  HW_CYCLES
 };
 
 void init_mcpat(const gpgpu_sim_config &config,
@@ -103,8 +104,8 @@ void mcpat_cycle(const gpgpu_sim_config &config,
         power_stats->get_l1d_write_hits(), power_stats->get_l1d_write_misses());
 
     wrapper->set_l2cache_power(
-        power_stats->get_l2_read_hits(), power_stats->get_l2_read_misses(),
-        power_stats->get_l2_write_hits(), power_stats->get_l2_write_misses());
+        power_stats->get_l2_read_hits(0), power_stats->get_l2_read_misses(0),
+        power_stats->get_l2_write_hits(0), power_stats->get_l2_write_misses(0));
 
     float active_sms = (*power_stats->m_active_sms) / stat_sample_freq;
     float num_cores = shdr_config->num_shader();
@@ -172,11 +173,11 @@ void mcpat_cycle(const gpgpu_sim_config &config,
 
     double n_icnt_simt_to_mem =
         (double)
-            power_stats->get_icnt_simt_to_mem();  // # flits from SIMT clusters
+            power_stats->get_icnt_simt_to_mem(0);  // # flits from SIMT clusters
                                                   // to memory partitions
     double n_icnt_mem_to_simt =
         (double)
-            power_stats->get_icnt_mem_to_simt();  // # flits from memory
+            power_stats->get_icnt_mem_to_simt(0);  // # flits from memory
                                                   // partitions to SIMT clusters
     wrapper->set_NoC_power(n_icnt_mem_to_simt + n_icnt_simt_to_mem);  // Number of flits traversing the interconnect
 
@@ -273,7 +274,8 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
       }
   }
   assert(kernel_found);
-  wrapper->init_mcpat_hw_mode(cycle); //total simulated cycles for current kernel
+  unsigned hw_cycles = static_cast<unsigned int>(std::stod(hw_data[HW_CYCLES]) + 0.5);
+  wrapper->init_mcpat_hw_mode(hw_cycles); //total HW cycles for current kernel
 
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, cycle,
@@ -302,9 +304,14 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
         std::stod(hw_data[HW_L1_RH]),  std::stod(hw_data[HW_L1_RM]),
         std::stod(hw_data[HW_L1_WH]),  std::stod(hw_data[HW_L1_WM]));
 
-    wrapper->set_l2cache_power(
+    if(power_simulation_mode == 1)
+      wrapper->set_l2cache_power(
        std::stod(hw_data[HW_L2_RH]),  std::stod(hw_data[HW_L2_RM]),
         std::stod(hw_data[HW_L2_WH]),  std::stod(hw_data[HW_L2_WM]));
+    else if(power_simulation_mode == 2)
+      wrapper->set_l2cache_power(
+        power_stats->get_l2_read_hits(1) - power_stats->l2r_hits_kernel, power_stats->get_l2_read_misses(1)  - power_stats->l2r_misses_kernel,
+        power_stats->get_l2_write_hits(1) - power_stats->l2w_hits_kernel, power_stats->get_l2_write_misses(1) - power_stats->l2w_misses_kernel);
 
     // float active_sms = (*power_stats->m_active_sms) / stat_sample_freq;
     float num_cores = shdr_config->num_shader();
@@ -321,16 +328,16 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     wrapper->set_duty_cycle_power(std::stod(hw_data[HW_PIPE_DUTY]));
 
     // Memory Controller
-    if(power_simulation_mode == 1)
+    // if(power_simulation_mode == 1)
       wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
                                 std::stod(hw_data[HW_DRAM_WR]),
                                 0);
-    else if(power_simulation_mode == 2)
-      wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
-                                std::stod(hw_data[HW_DRAM_WR]),
-                                power_stats->get_dram_pre());
-    else
-      assert(power_simulation_mode>0 && power_simulation_mode<3);
+    // else if(power_simulation_mode == 2)
+    //   wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
+    //                             std::stod(hw_data[HW_DRAM_WR]),
+    //                             power_stats->get_dram_pre());
+    // else
+    //   assert(power_simulation_mode>0 && power_simulation_mode<3);
     // Execution pipeline accesses
     // FPU (SP) accesses, Integer ALU (not present in Tesla), Sfu accesses
 
@@ -376,15 +383,21 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     assert(avg_sfu_active_lanes <= 32);
     wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
 
-    // double n_icnt_simt_to_mem =
-    //     (double)
-    //         power_stats->get_icnt_simt_to_mem();  // # flits from SIMT clusters
-    //                                               // to memory partitions
-    // double n_icnt_mem_to_simt =
-    //     (double)
-    //         power_stats->get_icnt_mem_to_simt();  // # flits from memory
-    //                                               // partitions to SIMT clusters
-    wrapper->set_NoC_power(std::stod(hw_data[HW_NOC]));  // Number of flits traversing the interconnect
+    
+    if(power_simulation_mode == 1){
+      wrapper->set_NoC_power(std::stod(hw_data[HW_NOC]));  // Number of flits traversing the interconnect
+    }
+    else{
+      double n_icnt_simt_to_mem =
+        (double)
+            power_stats->get_icnt_simt_to_mem(1);  // # flits from SIMT clusters
+                                                  // to memory partitions
+      double n_icnt_mem_to_simt =
+        (double)
+            power_stats->get_icnt_mem_to_simt(1);  // # flits from memory
+                                                  // partitions to SIMT clusters
+      wrapper->set_NoC_power(n_icnt_mem_to_simt + n_icnt_simt_to_mem);  // Number of flits traversing the interconnect
+    }
 
     wrapper->compute();
 
@@ -395,5 +408,12 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     wrapper->dump();
     power_stats->l1i_hits_kernel = power_stats->get_inst_c_hits(1);
     power_stats->l1i_misses_kernel = power_stats->get_inst_c_misses(1);
+    power_stats->l2r_hits_kernel = power_stats->get_l2_read_hits(1);
+    power_stats->l2r_misses_kernel = power_stats->get_l2_read_misses(1);
+    power_stats->l2w_hits_kernel =  power_stats->get_l2_write_hits(1); 
+    power_stats->l2w_misses_kernel = power_stats->get_l2_write_misses(1);
+
+
+
     power_stats->clear();
 }

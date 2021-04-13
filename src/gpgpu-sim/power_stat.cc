@@ -381,6 +381,10 @@ power_stat_t::power_stat_t(const shader_core_config *shader_config,
   m_mem_config = mem_config;
   l1i_hits_kernel =0;
   l1i_misses_kernel =0;
+  l2r_hits_kernel =0;
+  l2r_misses_kernel =0;
+  l2w_hits_kernel =0;
+  l2w_misses_kernel =0;
 }
 
 void power_stat_t::visualizer_print(gzFile visualizer_file) {
