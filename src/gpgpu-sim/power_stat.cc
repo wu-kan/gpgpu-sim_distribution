@@ -385,6 +385,8 @@ power_stat_t::power_stat_t(const shader_core_config *shader_config,
   l2r_misses_kernel =0;
   l2w_hits_kernel =0;
   l2w_misses_kernel =0;
+  noc_tr_kernel = 0;
+  noc_rc_kernel = 0;
 }
 
 void power_stat_t::visualizer_print(gzFile visualizer_file) {

@@ -81,7 +81,7 @@ struct PowerscalingCoefficients{
 
 class gpgpu_sim_wrapper {
  public:
-  gpgpu_sim_wrapper(bool power_simulation_enabled, char* xmlfile, int power_simulation_mode);
+  gpgpu_sim_wrapper(bool power_simulation_enabled, char* xmlfile, int power_simulation_mode, bool dvfs_enabled);
   ~gpgpu_sim_wrapper();
 
   void init_mcpat(char* xmlfile, char* powerfile, char* power_trace_file,
@@ -89,7 +89,7 @@ class gpgpu_sim_wrapper {
                   bool power_sim_enabled, bool trace_enabled,
                   bool steady_state_enabled, bool power_per_cycle_dump,
                   double steady_power_deviation, double steady_min_period,
-                  int zlevel, double init_val, int stat_sample_freq, int power_sim_mode);
+                  int zlevel, double init_val, int stat_sample_freq, int power_sim_mode, bool dvfs_enabled);
   void init_mcpat_hw_mode(unsigned gpu_sim_cycle);
   void detect_print_steady_state(int position, double init_val);
   void close_files();
@@ -106,6 +106,7 @@ class gpgpu_sim_wrapper {
                                 const std::string& kernel_info_string,
                                 bool print_trace);
   void power_metrics_calculations();
+  void set_model_voltage(double model_voltage);
   void set_inst_power(bool clk_gated_lanes, double tot_cycles,
                       double busy_cycles, double tot_inst, double int_inst,
                       double fp_inst, double load_inst, double store_inst,
@@ -186,6 +187,7 @@ class gpgpu_sim_wrapper {
   double init_inst_val;
   double tot_sfu_accesses;
   double tot_fpu_accesses;
+  double modeled_chip_voltage;
   unsigned avg_threads_per_warp;
   std::vector<double> samples;
   std::vector<double> samples_counter;
@@ -198,6 +200,7 @@ class gpgpu_sim_wrapper {
   char* g_steady_state_tracking_filename;
   bool g_power_simulation_enabled;
   int g_power_simulation_mode;
+  bool g_dvfs_enabled;
   bool g_steady_power_levels_enabled;
   bool g_power_trace_enabled;
   bool g_power_per_cycle_dump;

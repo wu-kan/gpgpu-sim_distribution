@@ -162,6 +162,12 @@ void ParseXML::parse(char* filepath) {
       continue;
     }
     if (strcmp(xNode2.getChildNode("param", i).getAttribute("name"),
+               "modeled_chip_voltage_ref") == 0) {
+      sys.modeled_chip_voltage_ref =
+          atof(xNode2.getChildNode("param", i).getAttribute("value"));
+      continue;
+    }
+    if (strcmp(xNode2.getChildNode("param", i).getAttribute("name"),
                "target_chip_area") == 0) {
       sys.target_chip_area =
           atoi(xNode2.getChildNode("param", i).getAttribute("value"));
@@ -4272,6 +4278,7 @@ void ParseXML::initialize()  // Initialize all
   // strcpy(sys.homogeneous_cores,"default");
   sys.core_tech_node = 1;
   sys.target_core_clockrate = 1;
+  sys.modeled_chip_voltage_ref = 1;
   sys.target_chip_area = 1;
   sys.temperature = 1;
   sys.number_cache_levels = 1;

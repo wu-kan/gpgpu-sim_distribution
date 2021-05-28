@@ -115,13 +115,17 @@ void power_config::reg_options(class OptionParser *opp) {
                          &g_hw_perf_file_name, "Hardware Performance Statistics file",
                          "hw_perf.csv");
 
-  option_parser_register(opp, "-hw_perf_kernel_name", OPT_CSTR,
-                         &g_hw_perf_kernel_name, "Kernel Name in Hardware Performance Statistics file",
+  option_parser_register(opp, "-hw_perf_bench_name", OPT_CSTR,
+                         &g_hw_perf_bench_name, "Kernel Name in Hardware Performance Statistics file",
                          "");
 
   option_parser_register(opp, "-power_simulation_mode", OPT_INT32,
                          &g_power_simulation_mode,
                          "Switch performance counter input for power simulation (0=Sim, 1=HW, 2=HW-Sim Hybrid)", "0");
+
+  option_parser_register(opp, "-dvfs_enabled", OPT_BOOL,
+                         &g_dvfs_enabled,
+                         "Turn on DVFS for power model", "0");
   // Output Data Formats
   option_parser_register(
       opp, "-power_trace_enabled", OPT_BOOL, &g_power_trace_enabled,
@@ -840,7 +844,7 @@ gpgpu_sim::gpgpu_sim(const gpgpu_sim_config &config, gpgpu_context *ctx)
 
 #ifdef GPGPUSIM_POWER_MODEL
   m_gpgpusim_wrapper = new gpgpu_sim_wrapper(config.g_power_simulation_enabled,
-                                             config.g_power_config_name, config.g_power_simulation_mode);
+                                             config.g_power_config_name, config.g_power_simulation_mode, config.g_dvfs_enabled);
 #endif
 
   m_shader_stats = new shader_core_stats(m_shader_config);
@@ -1353,7 +1357,7 @@ void gpgpu_sim::gpu_print_stat() {
        calculate_hw_mcpat(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
                   m_power_stats, m_config.gpu_stat_sample_freq,
                   gpu_tot_sim_cycle, gpu_sim_cycle, gpu_tot_sim_insn,
-                  gpu_sim_insn, m_config.g_power_simulation_mode, m_config.g_hw_perf_file_name, m_config.g_hw_perf_kernel_name, executed_kernel_name());
+                  gpu_sim_insn, m_config.g_power_simulation_mode, m_config.g_dvfs_enabled, m_config.g_hw_perf_file_name, m_config.g_hw_perf_bench_name, executed_kernel_name());
     }
     m_gpgpusim_wrapper->print_power_kernel_stats(
         gpu_sim_cycle, gpu_tot_sim_cycle, gpu_tot_sim_insn + gpu_sim_insn,
@@ -1902,7 +1906,7 @@ void gpgpu_sim::cycle() {
       mcpat_cycle(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
                   m_power_stats, m_config.gpu_stat_sample_freq,
                   gpu_tot_sim_cycle, gpu_sim_cycle, gpu_tot_sim_insn,
-                  gpu_sim_insn);
+                  gpu_sim_insn, m_config.g_dvfs_enabled);
     }
 #endif
 

@@ -30,6 +30,7 @@
 
 enum hw_perf_t {
   HW_BENCH_NAME=0,
+  HW_KERNEL_NAME,
   HW_L1_RH,
   HW_L1_RM,
   HW_L1_WH,
@@ -45,7 +46,8 @@ enum hw_perf_t {
   HW_NOC,
   HW_PIPE_DUTY,
   HW_NUM_SM_IDLE,
-  HW_CYCLES
+  HW_CYCLES,
+  HW_VOLTAGE
 };
 
 void init_mcpat(const gpgpu_sim_config &config,
@@ -58,7 +60,7 @@ void init_mcpat(const gpgpu_sim_config &config,
       config.g_power_simulation_enabled, config.g_power_trace_enabled,
       config.g_steady_power_levels_enabled, config.g_power_per_cycle_dump,
       config.gpu_steady_power_deviation, config.gpu_steady_min_period,
-      config.g_power_trace_zlevel, tot_inst + inst, stat_sample_freq,  config.g_power_simulation_mode);
+      config.g_power_trace_zlevel, tot_inst + inst, stat_sample_freq,  config.g_power_simulation_mode, config.g_dvfs_enabled);
 }
 
 void mcpat_cycle(const gpgpu_sim_config &config,
@@ -66,7 +68,7 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                  class gpgpu_sim_wrapper *wrapper,
                  class power_stat_t *power_stats, unsigned stat_sample_freq,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
-                 unsigned inst) {
+                 unsigned inst, bool dvfs_enabled) {
   static bool mcpat_init = true;
 
   if (mcpat_init) {  // If first cycle, don't have any power numbers yet
@@ -76,6 +78,10 @@ void mcpat_cycle(const gpgpu_sim_config &config,
 
 
   if ((tot_cycle + cycle) % stat_sample_freq == 0) {
+    if(dvfs_enabled){
+      wrapper->set_model_voltage(1); //performance model needs to support this.
+    }
+
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, stat_sample_freq,
         stat_sample_freq, power_stats->get_total_inst(0),
@@ -200,83 +206,61 @@ void mcpat_reset_perf_count(class gpgpu_sim_wrapper *wrapper) {
   wrapper->reset_counters();
 }
 
+bool parse_hw_file(char* hwpowerfile, bool find_target_kernel, vector<string> &hw_data, char* benchname, std::string executed_kernelname){
+  fstream hw_file;
+  hw_file.open(hwpowerfile, ios::in);
+  string line, word, temp;
+  while(!hw_file.eof()){
+    hw_data.clear();
+    getline(hw_file, line);
+    stringstream s(line);
+    while (getline(s,word,',')){
+      hw_data.push_back(word);
+    }
+    if(hw_data[HW_BENCH_NAME] == std::string(benchname)){
+      if(find_target_kernel){
+        if(hw_data[HW_KERNEL_NAME] == ""){
+          hw_file.close();
+          return true;
+        }
+        else{
+          if(hw_data[HW_KERNEL_NAME] == executed_kernelname){
+            hw_file.close();
+            return true;
+          }
+        }
+      }
+      else{
+        hw_file.close();
+        return true;
+      }
+    } 
+  }
+  hw_file.close();
+  return false;
+}
+
 
 void calculate_hw_mcpat(const gpgpu_sim_config &config,
                  const shader_core_config *shdr_config,
                  class gpgpu_sim_wrapper *wrapper,
                  class power_stat_t *power_stats, unsigned stat_sample_freq,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
-                 unsigned inst, int power_simulation_mode, char* hwpowerfile, char* kernelname, std::string executed_kernelname){
+                 unsigned inst, int power_simulation_mode, bool dvfs_enabled, char* hwpowerfile, char* benchname, std::string executed_kernelname){
 
-
-  /* Finding the correct kernel name for HW data CSV file  */
-  std::string current_kernelname;
-  if(std::string(kernelname) == "b+tree-rodinia-3.1"){
-    if(executed_kernelname == "findRangeK")
-      current_kernelname = "b+tree-rodinia-3.1_k1";
-    else
-      current_kernelname = "b+tree-rodinia-3.1_k2";
-  } 
-
-  else if(std::string(kernelname) == "backprop-rodinia-3.1"){
-    if(executed_kernelname == "_Z22bpnn_layerforward_CUDAPfS_S_S_ii")
-      current_kernelname = "backprop-rodinia-3.1_k1";
-    else
-      current_kernelname = "backprop-rodinia-3.1_k2";
-  }   
-
-  else if(std::string(kernelname) == "dct8x8"){
-    if(executed_kernelname == "_Z14CUDAkernel1DCTPfiiiy")
-      current_kernelname = "dct8x8_k1";
-    else
-      current_kernelname = "dct8x8_k2";
-  } 
-
-  else if(std::string(kernelname) == "fastWalshTransform"){
-    if(executed_kernelname == "_Z15fwtBatch2KernelPfS_i")
-      current_kernelname = "fastWalshTransform_k1";
-    else
-      current_kernelname = "fastWalshTransform_k2";
-  } 
-
-  else if(std::string(kernelname) == "mergeSort"){
-    if(executed_kernelname == "_Z30mergeElementaryIntervalsKernelILj1EEvPjS0_S0_S0_S0_S0_jj")
-      current_kernelname = "mergeSort_k1";
-    else
-      current_kernelname = "mergeSort_k2";
-  } 
-
-  else if(std::string(kernelname) == "quasirandomGenerator"){
-    if(executed_kernelname == "_Z26quasirandomGeneratorKernelPfjj")
-      current_kernelname = "quasirandomGenerator_k1";
-    else
-      current_kernelname = "quasirandomGenerator_k2";
-  } 
-  else
-    current_kernelname = std::string(kernelname);
-  cout<<"Searching for HW_perf data for kernel: "<<current_kernelname<<" : "<<executed_kernelname<<endl;
   /* Reading HW data from CSV file */
-  fstream hw_file;
-  hw_file.open(hwpowerfile, ios::in);
   vector<string> hw_data;
-    string line, word, temp;
-    bool kernel_found = false;
-    while(!hw_file.eof()){
-      hw_data.clear();
-      getline(hw_file, line);
-      stringstream s(line);
-      while (getline(s,word,',')){
-        hw_data.push_back(word);
-      }
-      if(hw_data[HW_BENCH_NAME] == current_kernelname){
-        kernel_found = true;
-        break;
-      }
-  }
-  assert(kernel_found);
+  bool kernel_found = false;
+  kernel_found = parse_hw_file(hwpowerfile, true, hw_data, benchname, executed_kernelname); //Searching for matching executed_kernelname.
+  if(!kernel_found)
+    kernel_found = parse_hw_file(hwpowerfile, false, hw_data, benchname, executed_kernelname); //Searching for any kernel with same benchname. 
+  assert("Could not find perf stats for the target benchmark in hwpowerfile.\n" && (kernel_found));
   unsigned hw_cycles = static_cast<unsigned int>(std::stod(hw_data[HW_CYCLES]) + 0.5);
   wrapper->init_mcpat_hw_mode(hw_cycles); //total HW cycles for current kernel
 
+  if(dvfs_enabled){
+    wrapper->set_model_voltage(std::stod(hw_data[HW_VOLTAGE])); //performance model needs to support this
+  }
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, cycle,
         cycle, power_stats->get_total_inst(1),
@@ -319,12 +303,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     wrapper->set_num_cores(num_cores);
     wrapper->set_idle_core_power(std::stod(hw_data[HW_NUM_SM_IDLE]));
 
-    // pipeline power - pipeline_duty_cycle *= percent_active_sms;
-    // float pipeline_duty_cycle =
-    //     ((*power_stats->m_average_pipeline_duty_cycle / (stat_sample_freq)) <
-    //      0.8)
-    //         ? ((*power_stats->m_average_pipeline_duty_cycle) / stat_sample_freq)
-    //         : 0.8;
+
     wrapper->set_duty_cycle_power(std::stod(hw_data[HW_PIPE_DUTY]));
 
     // Memory Controller
@@ -338,8 +317,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     //                             power_stats->get_dram_pre());
     // else
     //   assert(power_simulation_mode>0 && power_simulation_mode<3);
-    // Execution pipeline accesses
-    // FPU (SP) accesses, Integer ALU (not present in Tesla), Sfu accesses
+
 
     wrapper->set_int_accesses(power_stats->get_ialu_accessess(1), 
                               power_stats->get_intmul24_accessess(1), 
@@ -390,11 +368,11 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     else{
       double n_icnt_simt_to_mem =
         (double)
-            power_stats->get_icnt_simt_to_mem(1);  // # flits from SIMT clusters
+            (power_stats->get_icnt_simt_to_mem(1) - power_stats->noc_tr_kernel);  // # flits from SIMT clusters
                                                   // to memory partitions
       double n_icnt_mem_to_simt =
         (double)
-            power_stats->get_icnt_mem_to_simt(1);  // # flits from memory
+            (power_stats->get_icnt_mem_to_simt(1)- power_stats->noc_rc_kernel);  // # flits from memory
                                                   // partitions to SIMT clusters
       wrapper->set_NoC_power(n_icnt_mem_to_simt + n_icnt_simt_to_mem);  // Number of flits traversing the interconnect
     }
@@ -412,7 +390,8 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     power_stats->l2r_misses_kernel = power_stats->get_l2_read_misses(1);
     power_stats->l2w_hits_kernel =  power_stats->get_l2_write_hits(1); 
     power_stats->l2w_misses_kernel = power_stats->get_l2_write_misses(1);
-
+    power_stats->noc_tr_kernel = power_stats->get_icnt_simt_to_mem(1);
+    power_stats->noc_rc_kernel =  power_stats->get_icnt_mem_to_simt(1);
 
 
     power_stats->clear();

@@ -76,7 +76,7 @@ enum pwr_cmp_t {
 };
 
 gpgpu_sim_wrapper::gpgpu_sim_wrapper(bool power_simulation_enabled,
-                                     char* xmlfile, int power_simulation_mode) {
+                                     char* xmlfile, int power_simulation_mode, bool dvfs_enabled) {
   kernel_sample_count = 0;
   total_sample_count = 0;
 
@@ -109,6 +109,7 @@ gpgpu_sim_wrapper::gpgpu_sim_wrapper(bool power_simulation_enabled,
   xml_filename = xmlfile;
   g_power_simulation_enabled = power_simulation_enabled;
   g_power_simulation_mode = power_simulation_mode;
+  g_dvfs_enabled = dvfs_enabled;
   g_power_trace_enabled = false;
   g_steady_power_levels_enabled = false;
   g_power_trace_zlevel = 0;
@@ -149,7 +150,7 @@ void gpgpu_sim_wrapper::init_mcpat(
     bool power_sim_enabled, bool trace_enabled, bool steady_state_enabled,
     bool power_per_cycle_dump, double steady_power_deviation,
     double steady_min_period, int zlevel, double init_val,
-    int stat_sample_freq, int power_sim_mode) {
+    int stat_sample_freq, int power_sim_mode, bool dvfs_enabled) {
   // Write File Headers for (-metrics trace, -power trace)
 
   reset_counters();
@@ -174,6 +175,7 @@ void gpgpu_sim_wrapper::init_mcpat(
     xml_filename = xmlfile;
     g_power_simulation_enabled = power_sim_enabled;
     g_power_simulation_mode = power_sim_mode;
+    g_dvfs_enabled = dvfs_enabled;
     g_power_trace_enabled = trace_enabled;
     g_steady_power_levels_enabled = steady_state_enabled;
     g_power_trace_zlevel = zlevel;
@@ -403,6 +405,12 @@ void gpgpu_sim_wrapper::set_mem_ctrl_power(double reads, double writes,
   sample_perf_counters[MEM_WR] = writes;
   sample_perf_counters[MEM_PRE] = dram_precharge;
 }
+
+
+void gpgpu_sim_wrapper::set_model_voltage(double model_voltage) {
+	modeled_chip_voltage = model_voltage;
+}
+
 
 void gpgpu_sim_wrapper::set_exec_unit_power(double fpu_accesses,
                                             double ialu_accesses,
@@ -928,18 +936,30 @@ void gpgpu_sim_wrapper::update_components_power()
   //   sample_cmp_pwr[CONSTP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
   sample_cmp_pwr[CONSTP] = p->sys.scaling_coefficients[CONST_DYNAMICN];
   sample_cmp_pwr[STATICP] = calculate_static_power();
-  proc_power+=sample_cmp_pwr[CONSTP]+sample_cmp_pwr[STATICP];
-  double sum_pwr_cmp=0;
-  for(unsigned i=0; i<num_pwr_cmps; i++){
-    sum_pwr_cmp+=sample_cmp_pwr[i];
+
+  if(g_dvfs_enabled){
+  	double voltage_ratio = modeled_chip_voltage/p->sys.modeled_chip_voltage_ref; 
+  	sample_cmp_pwr[IDLE_COREP] *= voltage_ratio; // static power scaled by voltage_ratio
+  	sample_cmp_pwr[STATICP] *= voltage_ratio;  // static power scaled by voltage_ratio
+  	for(unsigned i=0; i<num_pwr_cmps; i++){
+    	if((i != IDLE_COREP) && (i != STATICP)){ 
+    		sample_cmp_pwr[i] *= voltage_ratio*voltage_ratio; // dynamic power scaled by square of voltage_ratio
+    	}
+  	}
   }
-
-  bool check=false;
-  check=sanity_check(sum_pwr_cmp,proc_power);
-  if(!check)
-    printf("sum_pwr_cmp %f : proc_power %f \n",sum_pwr_cmp,proc_power);
-  assert("Total Power does not equal the sum of the components\n" && (check));
-
+  
+  proc_power+=sample_cmp_pwr[CONSTP]+sample_cmp_pwr[STATICP];
+  if(!g_dvfs_enabled){ // sanity check will fail when voltage scaling is applied
+	  double sum_pwr_cmp=0;
+	  for(unsigned i=0; i<num_pwr_cmps; i++){
+	    sum_pwr_cmp+=sample_cmp_pwr[i];
+	  }
+	  bool check=false;
+	  check=sanity_check(sum_pwr_cmp,proc_power);
+	  if(!check)
+	    printf("sum_pwr_cmp %f : proc_power %f \n",sum_pwr_cmp,proc_power);
+	  assert("Total Power does not equal the sum of the components\n" && (check));
+  }
 }
 
 void gpgpu_sim_wrapper::compute() { proc->compute(); }

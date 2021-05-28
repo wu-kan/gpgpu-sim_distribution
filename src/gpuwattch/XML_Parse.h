@@ -649,6 +649,7 @@ typedef struct {
   int homogeneous_L2Directories;
   double core_tech_node;
   int target_core_clockrate;
+  double modeled_chip_voltage_ref;
   int target_chip_area;
   int temperature;
   int number_cache_levels;

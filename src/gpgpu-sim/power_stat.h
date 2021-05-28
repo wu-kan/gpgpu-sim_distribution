@@ -163,6 +163,8 @@ class power_stat_t {
   unsigned long long l2r_misses_kernel;
   unsigned long long l2w_hits_kernel;
   unsigned long long l2w_misses_kernel;
+  unsigned long long noc_tr_kernel;
+  unsigned long long noc_rc_kernel;
   unsigned get_total_inst(bool aggregate_stat) {
     double total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
@@ -1021,7 +1023,7 @@ class power_stat_t {
     return total;
   }
 
-  long get_icnt_simt_to_mem(bool aggregate_stat) {
+  unsigned long long get_icnt_simt_to_mem(bool aggregate_stat) {
     long total = 0;
     for (unsigned i = 0; i < m_config->n_simt_clusters; ++i){
       if(aggregate_stat){
@@ -1035,7 +1037,7 @@ class power_stat_t {
     return total;
   }
 
-  long get_icnt_mem_to_simt(bool aggregate_stat) {
+  unsigned long long get_icnt_mem_to_simt(bool aggregate_stat) {
     long total = 0;
     for (unsigned i = 0; i < m_config->n_simt_clusters; ++i) {
       if(aggregate_stat){

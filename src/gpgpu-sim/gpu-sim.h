@@ -128,9 +128,9 @@ struct power_config {
 
 
   char *g_hw_perf_file_name;
-  char *g_hw_perf_kernel_name;
+  char *g_hw_perf_bench_name;
   int g_power_simulation_mode;
-
+  bool g_dvfs_enabled;
 
   // Nonlinear power model
   bool g_use_nonlinear_model;
