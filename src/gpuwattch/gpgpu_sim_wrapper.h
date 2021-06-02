@@ -89,7 +89,8 @@ class gpgpu_sim_wrapper {
                   bool power_sim_enabled, bool trace_enabled,
                   bool steady_state_enabled, bool power_per_cycle_dump,
                   double steady_power_deviation, double steady_min_period,
-                  int zlevel, double init_val, int stat_sample_freq, int power_sim_mode, bool dvfs_enabled);
+                  int zlevel, double init_val, int stat_sample_freq, int power_sim_mode, 
+                  bool dvfs_enabled, unsigned clock_freq, unsigned num_shaders);
   void init_mcpat_hw_mode(unsigned gpu_sim_cycle);
   void detect_print_steady_state(int position, double init_val);
   void close_files();

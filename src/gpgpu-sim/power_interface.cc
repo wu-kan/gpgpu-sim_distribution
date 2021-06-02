@@ -60,7 +60,11 @@ void init_mcpat(const gpgpu_sim_config &config,
       config.g_power_simulation_enabled, config.g_power_trace_enabled,
       config.g_steady_power_levels_enabled, config.g_power_per_cycle_dump,
       config.gpu_steady_power_deviation, config.gpu_steady_min_period,
-      config.g_power_trace_zlevel, tot_inst + inst, stat_sample_freq,  config.g_power_simulation_mode, config.g_dvfs_enabled);
+      config.g_power_trace_zlevel, tot_inst + inst, stat_sample_freq,  
+      config.g_power_simulation_mode, 
+      config.g_dvfs_enabled,
+      config.get_core_freq(),
+      config.num_shader());
 }
 
 void mcpat_cycle(const gpgpu_sim_config &config,

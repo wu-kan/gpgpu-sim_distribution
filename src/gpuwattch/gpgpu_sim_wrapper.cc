@@ -150,7 +150,8 @@ void gpgpu_sim_wrapper::init_mcpat(
     bool power_sim_enabled, bool trace_enabled, bool steady_state_enabled,
     bool power_per_cycle_dump, double steady_power_deviation,
     double steady_min_period, int zlevel, double init_val,
-    int stat_sample_freq, int power_sim_mode, bool dvfs_enabled) {
+    int stat_sample_freq, int power_sim_mode, bool dvfs_enabled,
+    unsigned clock_freq, unsigned num_shaders) {
   // Write File Headers for (-metrics trace, -power trace)
 
   reset_counters();
@@ -187,6 +188,9 @@ void gpgpu_sim_wrapper::init_mcpat(
 
     // p->sys.total_cycles=gpu_stat_sample_freq*4;
     p->sys.total_cycles = gpu_stat_sample_freq;
+    p->sys.target_core_clockrate = clock_freq;
+    p->sys.number_of_cores = num_shaders;
+    p->sys.core[0].clock_rate = clock_freq;
     power_trace_file = NULL;
     metric_trace_file = NULL;
     steady_state_tacking_file = NULL;
@@ -757,80 +761,80 @@ double gpgpu_sim_wrapper::calculate_static_power(){
 
 	if(avg_threads_per_warp == 0){ //no functional unit threads, check for memory or a 'LIGHT_SM'
 		if(l1_accesses != 0.0)
-			return (34.79491352*per_active_core);
+			return (p->sys.static_l1_flane*per_active_core);
 		else if(shared_accesses != 0.0)
-			return (31.40965691*per_active_core);
+			return (p->sys.static_shared_flane*per_active_core);
 		else if(l2_accesses != 0.0)
-			return (17.30654755*per_active_core);
+			return (p->sys.static_l2_flane*per_active_core);
 		else //LIGHT_SM
-			return (1.965373811*per_active_core); //return LIGHT_SM base static power
+			return (p->sys.static_light_flane*per_active_core); //return LIGHT_SM base static power
 	}
 
 	/* using a linear model for thread divergence */
 	if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses != 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
 		/* INT_FP_DP */
-		base_static_power = 19.10017723;
-		lane_static_power = 0.726863055;
+		base_static_power = p->sys.static_cat3_flane;
+		lane_static_power = p->sys.static_cat3_addlane;
 	}
 
 	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses != 0.0) && (tex_accesses == 0.0)){
 		/* INT_FP_TENSOR */
-		base_static_power = 48.94875596;
-		lane_static_power = 0.0;
+		base_static_power = p->sys.static_cat6_flane;
+		lane_static_power = p->sys.static_cat6_addlane;
 	}
 
 	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses != 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
 		/* INT_FP_SFU */
-		base_static_power = 18.55029744;
-		lane_static_power = 0.6099397;
+		base_static_power = p->sys.static_cat4_flane;
+		lane_static_power = p->sys.static_cat4_addlane;
 	}
 
 	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses != 0.0)){
 		/* INT_FP_TEX */
-		base_static_power = 14.74826681;
-		lane_static_power = 0.514367937;
+		base_static_power = p->sys.static_cat5_flane;
+		lane_static_power = p->sys.static_cat5_addlane;
 	}
 
 	else if((int_accesses != 0.0) && (fp_accesses != 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
 		/* INT_FP */
-		base_static_power = 18.6179906;
-		lane_static_power = 0.645228013;
+		base_static_power = p->sys.static_cat2_flane;
+		lane_static_power = p->sys.static_cat2_addlane;
 	}
 
 	else if((int_accesses != 0.0) && (fp_accesses == 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
 		/* INT */
 		/* Seperating INT_ADD only and INT_MUL only from mix of INT instructions */
 		if((int_add_accesses != 0.0) && (int_mul_accesses == 0.0)){ //INT_ADD
-			base_static_power = 19.70468506;
-			lane_static_power = 0.388578623;
+			base_static_power = p->sys.static_intadd_flane;
+			lane_static_power = p->sys.static_intadd_addlane;
 		}
 		else if((int_add_accesses == 0.0) && (int_mul_accesses != 0.0)){ //INT_MUL
-			base_static_power = 16.64811823;
-			lane_static_power = 0.281803166;
+			base_static_power = p->sys.static_intmul_flane;
+			lane_static_power = p->sys.static_intmul_addlane;
 		}
 		else{ //INT_ADD+MUL
-			base_static_power = 15.29035866;
-			lane_static_power = 0.586233603;
+			base_static_power = p->sys.static_cat1_flane;
+			lane_static_power = p->sys.static_cat1_addlane;
 		}
 	}
 
 	else if((int_accesses == 0.0) && (fp_accesses == 0.0) && (dp_accesses == 0.0) && (sfu_accesses == 0.0) && (tensor_accesses == 0.0) && (tex_accesses == 0.0)){
 		/* LIGHT_SM or memory only sample */
-		lane_static_power = 0.0;
+		lane_static_power = 0.0; //addlane static power is 0 for l1/l2/shared memory only accesses
 		if(l1_accesses != 0.0)
-			base_static_power = 34.79491352;
+			base_static_power = p->sys.static_l1_flane;
 		else if(shared_accesses != 0.0)
-			base_static_power = 31.40965691;
+			base_static_power = p->sys.static_shared_flane;
 		else if(l2_accesses != 0.0)
-			base_static_power = 17.30654755;
+			base_static_power = p->sys.static_l2_flane;
 		else{
-			base_static_power = 1.965373811;
-			lane_static_power = 0.003966868;
+			base_static_power = p->sys.static_light_flane;
+			lane_static_power = p->sys.static_light_addlane;
 		}
 	}
 	else{
-		base_static_power = 17.21745077; //GEOMEAN except LIGHT_SM if we don't fall into any of the categories above
-		lane_static_power = 0.650630555;
+		base_static_power = p->sys.static_geomean_flane; //GEOMEAN except LIGHT_SM if we don't fall into any of the categories above
+		lane_static_power = p->sys.static_geomean_addlane;
 	}
 
 	total_static_power = base_static_power + (((double)avg_threads_per_warp-1.0)*lane_static_power); //Linear Model
@@ -932,9 +936,9 @@ void gpgpu_sim_wrapper::update_components_power()
   // // If the regression scaling term is greater than the recorded constant dynamic power
   // // then use the difference (other portion already added to dynamic power). Else,
   // // all the constant dynamic power is accounted for, add nothing.
-  // if(p->sys.scaling_coefficients[CONST_DYNAMICN] > cnst_dyn)
-  //   sample_cmp_pwr[CONSTP] = (p->sys.scaling_coefficients[CONST_DYNAMICN]-cnst_dyn);
-  sample_cmp_pwr[CONSTP] = p->sys.scaling_coefficients[CONST_DYNAMICN];
+  // if(p->sys.scaling_coefficients[constant_power] > cnst_dyn)
+  //   sample_cmp_pwr[CONSTP] = (p->sys.scaling_coefficients[constant_power]-cnst_dyn);
+  sample_cmp_pwr[CONSTP] = p->sys.scaling_coefficients[constant_power];
   sample_cmp_pwr[STATICP] = calculate_static_power();
 
   if(g_dvfs_enabled){
