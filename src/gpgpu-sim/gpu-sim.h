@@ -157,6 +157,7 @@ struct power_config {
   char *g_hw_perf_bench_name;
   int g_power_simulation_mode;
   bool g_dvfs_enabled;
+  bool g_aggregate_power_stats;
   bool accelwattch_hybrid_configuration[hw_perf_t::HW_TOTAL_STATS];
 
   // Nonlinear power model

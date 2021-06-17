@@ -127,6 +127,9 @@ void power_config::reg_options(class OptionParser *opp) {
   option_parser_register(opp, "-dvfs_enabled", OPT_BOOL,
                          &g_dvfs_enabled,
                          "Turn on DVFS for power model", "0");
+  option_parser_register(opp, "-aggregate_power_stats", OPT_BOOL,
+                         &g_aggregate_power_stats,
+                         "Accumulate power across all kernels", "0");
 
   //Accelwattch Hyrbid Configuration
 
@@ -1419,8 +1422,9 @@ void gpgpu_sim::gpu_print_stat() {
 #ifdef GPGPUSIM_POWER_MODEL
   if (m_config.g_power_simulation_enabled) {
     if(m_config.g_power_simulation_mode > 0){
-       mcpat_reset_perf_count(m_gpgpusim_wrapper);
-       calculate_hw_mcpat(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
+        if(!m_config.g_aggregate_power_stats)
+          mcpat_reset_perf_count(m_gpgpusim_wrapper);
+        calculate_hw_mcpat(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
                   m_power_stats, m_config.gpu_stat_sample_freq,
                   gpu_tot_sim_cycle, gpu_sim_cycle, gpu_tot_sim_insn,
                   gpu_sim_insn, m_config.g_power_simulation_mode, m_config.g_dvfs_enabled, 
@@ -1429,7 +1433,8 @@ void gpgpu_sim::gpu_print_stat() {
     m_gpgpusim_wrapper->print_power_kernel_stats(
         gpu_sim_cycle, gpu_tot_sim_cycle, gpu_tot_sim_insn + gpu_sim_insn,
         kernel_info_str, true);
-    mcpat_reset_perf_count(m_gpgpusim_wrapper);
+    if(!m_config.g_aggregate_power_stats)
+      mcpat_reset_perf_count(m_gpgpusim_wrapper);
   }
 #endif
 
