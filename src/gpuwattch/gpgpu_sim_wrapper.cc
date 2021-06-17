@@ -535,11 +535,11 @@ void gpgpu_sim_wrapper::power_metrics_calculations() {
   kernel_sample_count++;
 
   // Current sample power
-  //double sample_power = proc->rt_power.readOp.dynamic + sample_cmp_pwr[CONSTP] + sample_cmp_pwr[STATICP];
-  double sample_power;
-  for(unsigned i=0; i<num_pwr_cmps; i++){
-    sample_power+=sample_cmp_pwr[i]; //fix for dvfs
-  }
+  double sample_power = proc->rt_power.readOp.dynamic + sample_cmp_pwr[CONSTP] + sample_cmp_pwr[STATICP];
+  // double sample_power;
+  // for(unsigned i=0; i<num_pwr_cmps; i++){
+  //   sample_power+=sample_cmp_pwr[i]; //fix for dvfs
+  // }
 
   // Average power
   // Previous + new + constant dynamic power (e.g., dynamic clocking power)

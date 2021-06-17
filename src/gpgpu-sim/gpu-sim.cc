@@ -1422,7 +1422,7 @@ void gpgpu_sim::gpu_print_stat() {
 #ifdef GPGPUSIM_POWER_MODEL
   if (m_config.g_power_simulation_enabled) {
     if(m_config.g_power_simulation_mode > 0){
-        if(!m_config.g_aggregate_power_stats)
+        if(!m_config.g_aggregate_power_stats && (m_config.g_power_simulation_mode!=1))
           mcpat_reset_perf_count(m_gpgpusim_wrapper);
         calculate_hw_mcpat(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
                   m_power_stats, m_config.gpu_stat_sample_freq,
