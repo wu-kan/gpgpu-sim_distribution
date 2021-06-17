@@ -109,9 +109,9 @@ void power_stat_t::clear(){
 
 
 void power_mem_stat_t::init() {
-  shmem_read_access[CURRENT_STAT_IDX] =
+  shmem_access[CURRENT_STAT_IDX] =
       m_core_stats->gpgpu_n_shmem_bank_access;  // Shared memory access
-  shmem_read_access[PREV_STAT_IDX] =
+  shmem_access[PREV_STAT_IDX] =
       (unsigned *)calloc(m_core_config->num_shader(), sizeof(unsigned));
 
   for (unsigned i = 0; i < NUM_STAT_IDX; ++i) {
@@ -141,8 +141,8 @@ void power_mem_stat_t::save_stats() {
   l2_cache_stats[PREV_STAT_IDX] = l2_cache_stats[CURRENT_STAT_IDX];
 
   for (unsigned i = 0; i < m_core_config->num_shader(); ++i) {
-    shmem_read_access[PREV_STAT_IDX][i] =
-        shmem_read_access[CURRENT_STAT_IDX][i];  // Shared memory access
+    shmem_access[PREV_STAT_IDX][i] =
+        shmem_access[CURRENT_STAT_IDX][i];  // Shared memory access
   }
 
   for (unsigned i = 0; i < m_config->m_n_mem; ++i) {
@@ -379,6 +379,15 @@ power_stat_t::power_stat_t(const shader_core_config *shader_config,
   m_active_sms = active_sms;
   m_config = shader_config;
   m_mem_config = mem_config;
+  l1r_hits_kernel = 0;
+  l1r_misses_kernel = 0;
+  l1w_hits_kernel = 0;
+  l1w_misses_kernel = 0;
+  shared_accesses_kernel = 0;
+  cc_accesses_kernel = 0;
+  dram_rd_kernel = 0;
+  dram_wr_kernel = 0;
+  dram_pre_kernel = 0;
   l1i_hits_kernel =0;
   l1i_misses_kernel =0;
   l2r_hits_kernel =0;

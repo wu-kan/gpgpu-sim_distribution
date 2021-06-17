@@ -28,27 +28,6 @@
 
 #include "power_interface.h"
 
-enum hw_perf_t {
-  HW_BENCH_NAME=0,
-  HW_KERNEL_NAME,
-  HW_L1_RH,
-  HW_L1_RM,
-  HW_L1_WH,
-  HW_L1_WM,
-  HW_CC,
-  HW_SHRD,
-  HW_DRAM_RD,
-  HW_DRAM_WR,
-  HW_L2_RH,
-  HW_L2_RM,
-  HW_L2_WH,
-  HW_L2_WM,
-  HW_NOC,
-  HW_PIPE_DUTY,
-  HW_NUM_SM_IDLE,
-  HW_CYCLES,
-  HW_VOLTAGE
-};
 
 void init_mcpat(const gpgpu_sim_config &config,
                 class gpgpu_sim_wrapper *wrapper, unsigned stat_sample_freq,
@@ -63,7 +42,7 @@ void init_mcpat(const gpgpu_sim_config &config,
       config.g_power_trace_zlevel, tot_inst + inst, stat_sample_freq,  
       config.g_power_simulation_mode, 
       config.g_dvfs_enabled,
-      config.get_core_freq(),
+      config.get_core_freq()/1000000,
       config.num_shader());
 }
 
@@ -90,8 +69,8 @@ void mcpat_cycle(const gpgpu_sim_config &config,
         shdr_config->gpgpu_clock_gated_lanes, stat_sample_freq,
         stat_sample_freq, power_stats->get_total_inst(0),
         power_stats->get_total_int_inst(0), power_stats->get_total_fp_inst(0),
-        power_stats->get_l1d_read_accesses(),
-        power_stats->get_l1d_write_accesses(),
+        power_stats->get_l1d_read_accesses(0),
+        power_stats->get_l1d_write_accesses(0),
         power_stats->get_committed_inst(0));
 
     // Single RF for both int and fp ops
@@ -104,14 +83,14 @@ void mcpat_cycle(const gpgpu_sim_config &config,
                               power_stats->get_inst_c_misses(0));
 
     // Constant Cache, shared memory, texture cache
-    wrapper->set_ccache_power(power_stats->get_const_accessess(), 0); //assuming all HITS in constant cache for now
+    wrapper->set_ccache_power(power_stats->get_const_accessess(0), 0); //assuming all HITS in constant cache for now
     wrapper->set_tcache_power(power_stats->get_texture_c_hits(),
                               power_stats->get_texture_c_misses());
-    wrapper->set_shrd_mem_power(power_stats->get_shmem_read_access());
+    wrapper->set_shrd_mem_power(power_stats->get_shmem_access(0));
 
     wrapper->set_l1cache_power(
-        power_stats->get_l1d_read_hits(), power_stats->get_l1d_read_misses(),
-        power_stats->get_l1d_write_hits(), power_stats->get_l1d_write_misses());
+        power_stats->get_l1d_read_hits(0), power_stats->get_l1d_read_misses(0),
+        power_stats->get_l1d_write_hits(0), power_stats->get_l1d_write_misses(0));
 
     wrapper->set_l2cache_power(
         power_stats->get_l2_read_hits(0), power_stats->get_l2_read_misses(0),
@@ -132,9 +111,9 @@ void mcpat_cycle(const gpgpu_sim_config &config,
     wrapper->set_duty_cycle_power(pipeline_duty_cycle);
 
     // Memory Controller
-    wrapper->set_mem_ctrl_power(power_stats->get_dram_rd(),
-                                power_stats->get_dram_wr(),
-                                power_stats->get_dram_pre());
+    wrapper->set_mem_ctrl_power(power_stats->get_dram_rd(0),
+                                power_stats->get_dram_wr(0),
+                                power_stats->get_dram_pre(0));
 
     // Execution pipeline accesses
     // FPU (SP) accesses, Integer ALU (not present in Tesla), Sfu accesses
@@ -250,77 +229,128 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                  class gpgpu_sim_wrapper *wrapper,
                  class power_stat_t *power_stats, unsigned stat_sample_freq,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
-                 unsigned inst, int power_simulation_mode, bool dvfs_enabled, char* hwpowerfile, char* benchname, std::string executed_kernelname){
+                 unsigned inst, int power_simulation_mode, bool dvfs_enabled, char* hwpowerfile, 
+                 char* benchname, std::string executed_kernelname, const bool *accelwattch_hybrid_configuration){
 
   /* Reading HW data from CSV file */
+
   vector<string> hw_data;
   bool kernel_found = false;
   kernel_found = parse_hw_file(hwpowerfile, true, hw_data, benchname, executed_kernelname); //Searching for matching executed_kernelname.
   if(!kernel_found)
     kernel_found = parse_hw_file(hwpowerfile, false, hw_data, benchname, executed_kernelname); //Searching for any kernel with same benchname. 
   assert("Could not find perf stats for the target benchmark in hwpowerfile.\n" && (kernel_found));
-  unsigned hw_cycles = static_cast<unsigned int>(std::stod(hw_data[HW_CYCLES]) + 0.5);
-  wrapper->init_mcpat_hw_mode(hw_cycles); //total HW cycles for current kernel
+  unsigned perf_cycles = static_cast<unsigned int>(std::stod(hw_data[HW_CYCLES]) + 0.5);
+  if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_CYCLES]))
+    perf_cycles = cycle;
+  wrapper->init_mcpat_hw_mode(perf_cycles); //total HW cycles for current kernel
 
   if(dvfs_enabled){
-    wrapper->set_model_voltage(std::stod(hw_data[HW_VOLTAGE])); //performance model needs to support this
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_VOLTAGE])) 
+      wrapper->set_model_voltage(1); //performance model needs to support this
+    else  
+      wrapper->set_model_voltage(std::stod(hw_data[HW_VOLTAGE])); //performance model needs to support this
   }
+
+  double l1_read_hits = std::stod(hw_data[HW_L1_RH]);
+  double l1_read_misses = std::stod(hw_data[HW_L1_RM]);
+  double l1_write_hits = std::stod(hw_data[HW_L1_WH]);
+  double l1_write_misses = std::stod(hw_data[HW_L1_WM]);
+
+  if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L1_RH]))
+    l1_read_hits = power_stats->get_l1d_read_hits(1) - power_stats->l1r_hits_kernel;
+  if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L1_RM]))
+    l1_read_misses = power_stats->get_l1d_read_misses(1) - power_stats->l1r_misses_kernel;
+  if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L1_WH]))
+    l1_write_hits = power_stats->get_l1d_write_hits(1) - power_stats->l1w_hits_kernel;
+  if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L1_WM]))
+    l1_write_misses = power_stats->get_l1d_write_misses(1) - power_stats->l1w_misses_kernel;
+
+
     wrapper->set_inst_power(
         shdr_config->gpgpu_clock_gated_lanes, cycle,
         cycle, power_stats->get_total_inst(1),
         power_stats->get_total_int_inst(1), power_stats->get_total_fp_inst(1),
-        std::stod(hw_data[HW_L1_RH]) + std::stod(hw_data[HW_L1_RM]),
-        std::stod(hw_data[HW_L1_WH]) + std::stod(hw_data[HW_L1_WM]),
+        l1_read_hits + l1_read_misses,
+        l1_write_hits + l1_write_misses,
         power_stats->get_committed_inst(1));
 
-    // Single RF for both int and fp ops
+    // Single RF for both int and fp ops -- activity factor set to 0 for Accelwattch HW and Accelwattch Hybrid because no HW Perf Stats for register files
     wrapper->set_regfile_power(power_stats->get_regfile_reads(1),
                                power_stats->get_regfile_writes(1),
                                power_stats->get_non_regfile_operands(1));
 
-    // Instruction cache stats
+    // Instruction cache stats -- activity factor set to 0 for Accelwattch HW and Accelwattch Hybrid because no HW Perf Stats for instruction cache
     wrapper->set_icache_power(power_stats->get_inst_c_hits(1) - power_stats->l1i_hits_kernel,
                               power_stats->get_inst_c_misses(1) - power_stats->l1i_misses_kernel);
 
     // Constant Cache, shared memory, texture cache
-    wrapper->set_ccache_power(std::stod(hw_data[HW_CC]), 0); //assuming all HITS in constant cache for now
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_CC_ACC]))
+      wrapper->set_ccache_power(power_stats->get_const_accessess(1) - power_stats->cc_accesses_kernel, 0); //assuming all HITS in constant cache for now
+    else  
+      wrapper->set_ccache_power(std::stod(hw_data[HW_CC_ACC]), 0); //assuming all HITS in constant cache for now
+
+    
     // wrapper->set_tcache_power(power_stats->get_texture_c_hits(),
     //                           power_stats->get_texture_c_misses());
-    wrapper->set_shrd_mem_power(std::stod(hw_data[HW_SHRD]));
 
-    wrapper->set_l1cache_power(
-        std::stod(hw_data[HW_L1_RH]),  std::stod(hw_data[HW_L1_RM]),
-        std::stod(hw_data[HW_L1_WH]),  std::stod(hw_data[HW_L1_WM]));
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_SHRD_ACC]))
+      wrapper->set_shrd_mem_power(power_stats->get_shmem_access(1) - power_stats->shared_accesses_kernel);
+    else  
+      wrapper->set_shrd_mem_power(std::stod(hw_data[HW_SHRD_ACC]));
 
-    if(power_simulation_mode == 1)
-      wrapper->set_l2cache_power(
-       std::stod(hw_data[HW_L2_RH]),  std::stod(hw_data[HW_L2_RM]),
-        std::stod(hw_data[HW_L2_WH]),  std::stod(hw_data[HW_L2_WM]));
-    else if(power_simulation_mode == 2)
-      wrapper->set_l2cache_power(
-        power_stats->get_l2_read_hits(1) - power_stats->l2r_hits_kernel, power_stats->get_l2_read_misses(1)  - power_stats->l2r_misses_kernel,
-        power_stats->get_l2_write_hits(1) - power_stats->l2w_hits_kernel, power_stats->get_l2_write_misses(1) - power_stats->l2w_misses_kernel);
+    wrapper->set_l1cache_power( l1_read_hits,  l1_read_misses, l1_write_hits,  l1_write_misses);
 
-    // float active_sms = (*power_stats->m_active_sms) / stat_sample_freq;
+    double l2_read_hits = std::stod(hw_data[HW_L2_RH]);
+    double l2_read_misses = std::stod(hw_data[HW_L2_RM]);
+    double l2_write_hits = std::stod(hw_data[HW_L2_WH]);
+    double l2_write_misses = std::stod(hw_data[HW_L2_WM]);
+
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L2_RH]))
+      l2_read_hits = power_stats->get_l2_read_hits(1) - power_stats->l2r_hits_kernel;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L2_RM]))
+      l2_read_misses = power_stats->get_l2_read_misses(1)  - power_stats->l2r_misses_kernel;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L2_WH]))
+      l2_write_hits = power_stats->get_l2_write_hits(1) - power_stats->l2w_hits_kernel;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L2_WM]))
+      l2_write_misses = power_stats->get_l2_write_misses(1) - power_stats->l2w_misses_kernel;
+
+    wrapper->set_l2cache_power(l2_read_hits, l2_read_misses, l2_write_hits, l2_write_misses);
+    
+    float active_sms = (*power_stats->m_active_sms) / stat_sample_freq;
     float num_cores = shdr_config->num_shader();
-    // float num_idle_core = num_cores - active_sms;
+    float num_idle_core = num_cores - active_sms;
     wrapper->set_num_cores(num_cores);
-    wrapper->set_idle_core_power(std::stod(hw_data[HW_NUM_SM_IDLE]));
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_NUM_SM_IDLE]))
+      wrapper->set_idle_core_power(num_idle_core);
+    else 
+      wrapper->set_idle_core_power(std::stod(hw_data[HW_NUM_SM_IDLE])); 
 
-
-    wrapper->set_duty_cycle_power(std::stod(hw_data[HW_PIPE_DUTY]));
+    float pipeline_duty_cycle =
+        ((*power_stats->m_average_pipeline_duty_cycle / (stat_sample_freq)) <
+         0.8)
+            ? ((*power_stats->m_average_pipeline_duty_cycle) / stat_sample_freq)
+            : 0.8;
+    
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_PIPE_DUTY]))
+      wrapper->set_duty_cycle_power(pipeline_duty_cycle);
+    else
+      wrapper->set_duty_cycle_power(std::stod(hw_data[HW_PIPE_DUTY]));
 
     // Memory Controller
-    // if(power_simulation_mode == 1)
-      wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
-                                std::stod(hw_data[HW_DRAM_WR]),
-                                0);
-    // else if(power_simulation_mode == 2)
-    //   wrapper->set_mem_ctrl_power(std::stod(hw_data[HW_DRAM_RD]),
-    //                             std::stod(hw_data[HW_DRAM_WR]),
-    //                             power_stats->get_dram_pre());
-    // else
-    //   assert(power_simulation_mode>0 && power_simulation_mode<3);
+  
+    double dram_reads = std::stod(hw_data[HW_DRAM_RD]);
+    double dram_writes = std::stod(hw_data[HW_DRAM_WR]);
+    double dram_pre = 0;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_DRAM_RD]))
+      dram_reads = power_stats->get_dram_rd(1) - power_stats->dram_rd_kernel;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_DRAM_WR]))
+      dram_writes = power_stats->get_dram_wr(1) - power_stats->dram_wr_kernel;
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_DRAM_RD]))
+      dram_pre = power_stats->get_dram_pre(1) - power_stats->dram_pre_kernel;
+
+
+    wrapper->set_mem_ctrl_power(dram_reads, dram_writes, dram_pre);
 
 
     wrapper->set_int_accesses(power_stats->get_ialu_accessess(1), 
@@ -365,22 +395,20 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     assert(avg_sfu_active_lanes <= 32);
     wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
 
-    
-    if(power_simulation_mode == 1){
-      wrapper->set_NoC_power(std::stod(hw_data[HW_NOC]));  // Number of flits traversing the interconnect
-    }
-    else{
-      double n_icnt_simt_to_mem =
-        (double)
-            (power_stats->get_icnt_simt_to_mem(1) - power_stats->noc_tr_kernel);  // # flits from SIMT clusters
-                                                  // to memory partitions
-      double n_icnt_mem_to_simt =
-        (double)
-            (power_stats->get_icnt_mem_to_simt(1)- power_stats->noc_rc_kernel);  // # flits from memory
-                                                  // partitions to SIMT clusters
-      wrapper->set_NoC_power(n_icnt_mem_to_simt + n_icnt_simt_to_mem);  // Number of flits traversing the interconnect
-    }
-
+  
+    double n_icnt_simt_to_mem =
+      (double)
+          (power_stats->get_icnt_simt_to_mem(1) - power_stats->noc_tr_kernel);  // # flits from SIMT clusters
+                                                // to memory partitions
+    double n_icnt_mem_to_simt =
+      (double)
+          (power_stats->get_icnt_mem_to_simt(1)- power_stats->noc_rc_kernel);  // # flits from memory
+                                                // partitions to SIMT clusters
+    if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_NOC]))   
+      wrapper->set_NoC_power(n_icnt_mem_to_simt + n_icnt_simt_to_mem);  // Number of flits traversing the interconnect from Accel-Sim
+    else
+      wrapper->set_NoC_power(std::stod(hw_data[HW_NOC]));  // Number of flits traversing the interconnect from HW
+   
     wrapper->compute();
 
     wrapper->update_components_power();
@@ -388,6 +416,15 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
     wrapper->power_metrics_calculations();
 
     wrapper->dump();
+    power_stats->l1r_hits_kernel = power_stats->get_l1d_read_hits(1);
+    power_stats->l1r_misses_kernel = power_stats->get_l1d_read_misses(1);
+    power_stats->l1w_hits_kernel = power_stats->get_l1d_write_hits(1);
+    power_stats->l1w_misses_kernel = power_stats->get_l1d_write_misses(1);
+    power_stats->shared_accesses_kernel = power_stats->get_const_accessess(1);
+    power_stats->cc_accesses_kernel = power_stats->get_shmem_access(1);
+    power_stats->dram_rd_kernel = power_stats->get_dram_rd(1);
+    power_stats->dram_wr_kernel = power_stats->get_dram_wr(1);
+    power_stats->dram_pre_kernel = power_stats->get_dram_pre(1);
     power_stats->l1i_hits_kernel = power_stats->get_inst_c_hits(1);
     power_stats->l1i_misses_kernel = power_stats->get_inst_c_misses(1);
     power_stats->l2r_hits_kernel = power_stats->get_l2_read_hits(1);

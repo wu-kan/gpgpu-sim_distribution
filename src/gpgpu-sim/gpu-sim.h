@@ -68,6 +68,29 @@ extern tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 
 enum dram_ctrl_t { DRAM_FIFO = 0, DRAM_FRFCFS = 1 };
 
+enum hw_perf_t {
+  HW_BENCH_NAME=0,
+  HW_KERNEL_NAME,
+  HW_L1_RH,
+  HW_L1_RM,
+  HW_L1_WH,
+  HW_L1_WM,
+  HW_CC_ACC,
+  HW_SHRD_ACC,
+  HW_DRAM_RD,
+  HW_DRAM_WR,
+  HW_L2_RH,
+  HW_L2_RM,
+  HW_L2_WH,
+  HW_L2_WM,
+  HW_NOC,
+  HW_PIPE_DUTY,
+  HW_NUM_SM_IDLE,
+  HW_CYCLES,
+  HW_VOLTAGE,
+  HW_TOTAL_STATS
+};
+
 struct power_config {
   power_config() { m_valid = true; }
   void init() {
@@ -95,6 +118,9 @@ struct power_config {
     snprintf(buf4, 1024, "gpgpusim_steady_state_tracking_report__%s.log.gz",
              date);
     g_steady_state_tracking_filename = strdup(buf4);
+    // for(int i =0; i< hw_perf_t::HW_TOTAL_STATS; i++){
+    //   accelwattch_hybrid_configuration[i] = 0;
+    // }
 
     if (g_steady_power_levels_enabled) {
       sscanf(gpu_steady_state_definition, "%lf:%lf",
@@ -131,6 +157,7 @@ struct power_config {
   char *g_hw_perf_bench_name;
   int g_power_simulation_mode;
   bool g_dvfs_enabled;
+  bool accelwattch_hybrid_configuration[hw_perf_t::HW_TOTAL_STATS];
 
   // Nonlinear power model
   bool g_use_nonlinear_model;
