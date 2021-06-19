@@ -59,7 +59,6 @@ void mcpat_cycle(const gpgpu_sim_config &config,
     return;
   }
 
-
   if ((tot_cycle + cycle) % stat_sample_freq == 0) {
     if(dvfs_enabled){
       wrapper->set_model_voltage(1); //performance model needs to support this.
@@ -243,7 +242,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
   unsigned perf_cycles = static_cast<unsigned int>(std::stod(hw_data[HW_CYCLES]) + 0.5);
   if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_CYCLES]))
     perf_cycles = cycle;
-  wrapper->init_mcpat_hw_mode(perf_cycles); //total HW cycles for current kernel
+  wrapper->init_mcpat_hw_mode(perf_cycles); //total PERF MODEL cycles for current kernel
 
   if(dvfs_enabled){
     if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_VOLTAGE])) 
