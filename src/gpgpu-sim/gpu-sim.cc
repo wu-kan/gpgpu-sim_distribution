@@ -99,7 +99,7 @@ tr1_hash_map<new_addr_type, unsigned> address_random_interleaving;
 void power_config::reg_options(class OptionParser *opp) {
   option_parser_register(opp, "-accelwattch_xml_file", OPT_CSTR,
                          &g_power_config_name, "AccelWattch XML file",
-                         "accelwattch_sass_s2.xml");
+                         "accelwattch_sass_sim.xml");
 
   option_parser_register(opp, "-power_simulation_enabled", OPT_BOOL,
                          &g_power_simulation_enabled,
@@ -1422,18 +1422,18 @@ void gpgpu_sim::gpu_print_stat() {
 #ifdef GPGPUSIM_POWER_MODEL
   if (m_config.g_power_simulation_enabled) {
     if(m_config.g_power_simulation_mode > 0){
-        if(!m_config.g_aggregate_power_stats)
+        //if(!m_config.g_aggregate_power_stats)
           mcpat_reset_perf_count(m_gpgpusim_wrapper);
         calculate_hw_mcpat(m_config, getShaderCoreConfig(), m_gpgpusim_wrapper,
                   m_power_stats, m_config.gpu_stat_sample_freq,
                   gpu_tot_sim_cycle, gpu_sim_cycle, gpu_tot_sim_insn,
                   gpu_sim_insn, m_config.g_power_simulation_mode, m_config.g_dvfs_enabled, 
-                  m_config.g_hw_perf_file_name, m_config.g_hw_perf_bench_name, executed_kernel_name(), m_config.accelwattch_hybrid_configuration);
+                  m_config.g_hw_perf_file_name, m_config.g_hw_perf_bench_name, executed_kernel_name(), m_config.accelwattch_hybrid_configuration, m_config.g_aggregate_power_stats);
     }
     m_gpgpusim_wrapper->print_power_kernel_stats(
         gpu_sim_cycle, gpu_tot_sim_cycle, gpu_tot_sim_insn + gpu_sim_insn,
         kernel_info_str, true);
-    if(!m_config.g_aggregate_power_stats)
+    //if(!m_config.g_aggregate_power_stats)
       mcpat_reset_perf_count(m_gpgpusim_wrapper);
   }
 #endif

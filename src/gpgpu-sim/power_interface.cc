@@ -229,7 +229,8 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                  class power_stat_t *power_stats, unsigned stat_sample_freq,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
                  unsigned inst, int power_simulation_mode, bool dvfs_enabled, char* hwpowerfile, 
-                 char* benchname, std::string executed_kernelname, const bool *accelwattch_hybrid_configuration){
+                 char* benchname, std::string executed_kernelname, 
+                 const bool *accelwattch_hybrid_configuration, bool aggregate_power_stats){
 
   /* Reading HW data from CSV file */
 
@@ -265,14 +266,28 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
   if((power_simulation_mode == 2) && (accelwattch_hybrid_configuration[HW_L1_WM]))
     l1_write_misses = power_stats->get_l1d_write_misses(1) - power_stats->l1w_misses_kernel;
 
-
+    if(aggregate_power_stats){
+      power_stats->tot_inst_execution += power_stats->get_total_inst(1);
+      power_stats->tot_int_inst_execution +=  power_stats->get_total_int_inst(1);
+      power_stats->tot_fp_inst_execution +=  power_stats->get_total_fp_inst(1);
+      power_stats->commited_inst_execution += power_stats->get_committed_inst(1);
+      wrapper->set_inst_power(
+        shdr_config->gpgpu_clock_gated_lanes, cycle, //TODO: core.[0] cycles counts don't matter, remove this
+        cycle, power_stats->tot_inst_execution,
+        power_stats->tot_int_inst_execution, power_stats->tot_fp_inst_execution,
+        l1_read_hits + l1_read_misses,
+        l1_write_hits + l1_write_misses,
+        power_stats->commited_inst_execution);
+    }
+    else{
     wrapper->set_inst_power(
-        shdr_config->gpgpu_clock_gated_lanes, cycle,
+        shdr_config->gpgpu_clock_gated_lanes, cycle, //TODO: core.[0] cycles counts don't matter, remove this
         cycle, power_stats->get_total_inst(1),
         power_stats->get_total_int_inst(1), power_stats->get_total_fp_inst(1),
         l1_read_hits + l1_read_misses,
         l1_write_hits + l1_write_misses,
         power_stats->get_committed_inst(1));
+    }
 
     // Single RF for both int and fp ops -- activity factor set to 0 for Accelwattch HW and Accelwattch Hybrid because no HW Perf Stats for register files
     wrapper->set_regfile_power(power_stats->get_regfile_reads(1),
@@ -351,48 +366,117 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
 
     wrapper->set_mem_ctrl_power(dram_reads, dram_writes, dram_pre);
 
+    if(aggregate_power_stats){
+      power_stats->ialu_acc_execution += power_stats->get_ialu_accessess(1);
+      power_stats->imul24_acc_execution += power_stats->get_intmul24_accessess(1);
+      power_stats->imul32_acc_execution += power_stats->get_intmul32_accessess(1);
+      power_stats->imul_acc_execution += power_stats->get_intmul_accessess(1);
+      power_stats->idiv_acc_execution += power_stats->get_intdiv_accessess(1);
+      power_stats->dp_acc_execution += power_stats->get_dp_accessess(1);
+      power_stats->dpmul_acc_execution += power_stats->get_dpmul_accessess(1);
+      power_stats->dpdiv_acc_execution += power_stats->get_dpdiv_accessess(1);
+      power_stats->fp_acc_execution += power_stats->get_fp_accessess(1);
+      power_stats->fpmul_acc_execution += power_stats->get_fpmul_accessess(1);
+      power_stats->fpdiv_acc_execution += power_stats->get_fpdiv_accessess(1);
+      power_stats->sqrt_acc_execution += power_stats->get_sqrt_accessess(1);
+      power_stats->log_acc_execution += power_stats->get_log_accessess(1);
+      power_stats->sin_acc_execution += power_stats->get_sin_accessess(1);
+      power_stats->exp_acc_execution += power_stats->get_exp_accessess(1);
+      power_stats->tensor_acc_execution += power_stats->get_tensor_accessess(1);
+      power_stats->tex_acc_execution += power_stats->get_tex_accessess(1);
+      power_stats->tot_fpu_acc_execution += power_stats->get_tot_fpu_accessess(1);
+      power_stats->tot_sfu_acc_execution += power_stats->get_tot_sfu_accessess(1);
+      power_stats->tot_threads_acc_execution += power_stats->get_tot_threads_kernel(1);
+      power_stats->tot_warps_acc_execution += power_stats->get_tot_warps_kernel(1);
+      
+      power_stats->sp_active_lanes_execution += (power_stats->get_sp_active_lanes() * shdr_config->num_shader() * shdr_config->gpgpu_num_sp_units);
+      power_stats->sfu_active_lanes_execution += (power_stats->get_sfu_active_lanes() * shdr_config->num_shader() * shdr_config->gpgpu_num_sp_units);
 
-    wrapper->set_int_accesses(power_stats->get_ialu_accessess(1), 
-                              power_stats->get_intmul24_accessess(1), 
-                              power_stats->get_intmul32_accessess(1), 
-                              power_stats->get_intmul_accessess(1), 
-                              power_stats->get_intdiv_accessess(1));
+      wrapper->set_int_accesses(power_stats->ialu_acc_execution, 
+                                power_stats->imul24_acc_execution, 
+                                power_stats->imul32_acc_execution, 
+                                power_stats->imul_acc_execution, 
+                                power_stats->idiv_acc_execution);
 
-    wrapper->set_dp_accesses(power_stats->get_dp_accessess(1), 
-                              power_stats->get_dpmul_accessess(1), 
-                              power_stats->get_dpdiv_accessess(1));
+      wrapper->set_dp_accesses(power_stats->dp_acc_execution, 
+                                power_stats->dpmul_acc_execution, 
+                                power_stats->dpdiv_acc_execution);
 
-    wrapper->set_fp_accesses(power_stats->get_fp_accessess(1), 
-                            power_stats->get_fpmul_accessess(1), 
-                            power_stats->get_fpdiv_accessess(1));
+      wrapper->set_fp_accesses(power_stats->fp_acc_execution, 
+                              power_stats->fpmul_acc_execution, 
+                              power_stats->fpdiv_acc_execution);
 
-    wrapper->set_trans_accesses(power_stats->get_sqrt_accessess(1), 
-                                power_stats->get_log_accessess(1), 
-                                power_stats->get_sin_accessess(1), 
-                                power_stats->get_exp_accessess(1));
+      wrapper->set_trans_accesses(power_stats->sqrt_acc_execution, 
+                                  power_stats->log_acc_execution, 
+                                  power_stats->sin_acc_execution, 
+                                  power_stats->exp_acc_execution);
 
-    wrapper->set_tensor_accesses(power_stats->get_tensor_accessess(1));
+      wrapper->set_tensor_accesses(power_stats->tensor_acc_execution);
 
-    wrapper->set_tex_accesses(power_stats->get_tex_accessess(1));
+      wrapper->set_tex_accesses(power_stats->tex_acc_execution);
 
-    wrapper->set_exec_unit_power(power_stats->get_tot_fpu_accessess(1),
-                                 power_stats->get_ialu_accessess(1),
-                                 power_stats->get_tot_sfu_accessess(1));
+      wrapper->set_exec_unit_power(power_stats->ialu_acc_execution,
+                                   power_stats->tot_fpu_acc_execution,
+                                   power_stats->tot_sfu_acc_execution);
 
-    wrapper->set_avg_active_threads(power_stats->get_active_threads(1));
+      wrapper->set_avg_active_threads((double)((double)power_stats->tot_threads_acc_execution / (double)power_stats->tot_warps_acc_execution));
 
-    // Average active lanes for sp and sfu pipelines
-    float avg_sp_active_lanes =
-        (power_stats->get_sp_active_lanes()) / stat_sample_freq;
-    float avg_sfu_active_lanes =
-        (power_stats->get_sfu_active_lanes()) / stat_sample_freq;
-    if(avg_sp_active_lanes >32.0 )
-      avg_sp_active_lanes = 32.0;
-    if(avg_sfu_active_lanes >32.0 )
-      avg_sfu_active_lanes = 32.0;
-    assert(avg_sp_active_lanes <= 32);
-    assert(avg_sfu_active_lanes <= 32);
-    wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
+      // Average active lanes for sp and sfu pipelines
+      float avg_sp_active_lanes =
+          (power_stats->sp_active_lanes_execution) / shdr_config->num_shader() / shdr_config->gpgpu_num_sp_units / stat_sample_freq;
+      float avg_sfu_active_lanes =
+          (power_stats->sfu_active_lanes_execution) / shdr_config->num_shader() / shdr_config->gpgpu_num_sp_units / stat_sample_freq;
+      if(avg_sp_active_lanes >32.0 )
+        avg_sp_active_lanes = 32.0;
+      if(avg_sfu_active_lanes >32.0 )
+        avg_sfu_active_lanes = 32.0;
+      assert(avg_sp_active_lanes <= 32);
+      assert(avg_sfu_active_lanes <= 32);
+      wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
+    }
+    else{
+      wrapper->set_int_accesses(power_stats->get_ialu_accessess(1), 
+                                power_stats->get_intmul24_accessess(1), 
+                                power_stats->get_intmul32_accessess(1), 
+                                power_stats->get_intmul_accessess(1), 
+                                power_stats->get_intdiv_accessess(1));
+
+      wrapper->set_dp_accesses(power_stats->get_dp_accessess(1), 
+                                power_stats->get_dpmul_accessess(1), 
+                                power_stats->get_dpdiv_accessess(1));
+
+      wrapper->set_fp_accesses(power_stats->get_fp_accessess(1), 
+                              power_stats->get_fpmul_accessess(1), 
+                              power_stats->get_fpdiv_accessess(1));
+
+      wrapper->set_trans_accesses(power_stats->get_sqrt_accessess(1), 
+                                  power_stats->get_log_accessess(1), 
+                                  power_stats->get_sin_accessess(1), 
+                                  power_stats->get_exp_accessess(1));
+
+      wrapper->set_tensor_accesses(power_stats->get_tensor_accessess(1));
+
+      wrapper->set_tex_accesses(power_stats->get_tex_accessess(1));
+
+      wrapper->set_exec_unit_power(power_stats->get_tot_fpu_accessess(1),
+                                   power_stats->get_ialu_accessess(1),
+                                   power_stats->get_tot_sfu_accessess(1));
+
+      wrapper->set_avg_active_threads(power_stats->get_active_threads(1));
+
+      // Average active lanes for sp and sfu pipelines
+      float avg_sp_active_lanes =
+          (power_stats->get_sp_active_lanes()) / stat_sample_freq;
+      float avg_sfu_active_lanes =
+          (power_stats->get_sfu_active_lanes()) / stat_sample_freq;
+      if(avg_sp_active_lanes >32.0 )
+        avg_sp_active_lanes = 32.0;
+      if(avg_sfu_active_lanes >32.0 )
+        avg_sfu_active_lanes = 32.0;
+      assert(avg_sp_active_lanes <= 32);
+      assert(avg_sfu_active_lanes <= 32);
+      wrapper->set_active_lanes_power(avg_sp_active_lanes, avg_sfu_active_lanes);
+    }
 
   
     double n_icnt_simt_to_mem =

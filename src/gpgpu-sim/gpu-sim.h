@@ -105,8 +105,8 @@ struct power_config {
       s++;
     }
     char buf1[1024];
-    //snprintf(buf1, 1024, "gpgpusim_power_report__%s.log", date);
-    snprintf(buf1, 1024, "gpgpusim_power_report.log");
+    //snprintf(buf1, 1024, "accelwattch_power_report__%s.log", date);
+    snprintf(buf1, 1024, "accelwattch_power_report.log");
     g_power_filename = strdup(buf1);
     char buf2[1024];
     snprintf(buf2, 1024, "gpgpusim_power_trace_report__%s.log.gz", date);

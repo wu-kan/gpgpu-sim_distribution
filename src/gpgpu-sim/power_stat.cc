@@ -396,6 +396,34 @@ power_stat_t::power_stat_t(const shader_core_config *shader_config,
   l2w_misses_kernel =0;
   noc_tr_kernel = 0;
   noc_rc_kernel = 0;
+
+  tot_inst_execution = 0;
+  tot_int_inst_execution = 0;
+  tot_fp_inst_execution = 0;
+  commited_inst_execution = 0;
+  ialu_acc_execution = 0;
+  imul24_acc_execution = 0;
+  imul32_acc_execution = 0;
+  imul_acc_execution = 0;
+  idiv_acc_execution = 0;
+  dp_acc_execution = 0;
+  dpmul_acc_execution = 0;
+  dpdiv_acc_execution = 0;
+  fp_acc_execution = 0;
+  fpmul_acc_execution = 0;
+  fpdiv_acc_execution = 0;
+  sqrt_acc_execution = 0;
+  log_acc_execution = 0;
+  sin_acc_execution = 0;
+  exp_acc_execution = 0;
+  tensor_acc_execution = 0;
+  tex_acc_execution = 0;
+  tot_fpu_acc_execution = 0;
+  tot_sfu_acc_execution = 0;
+  tot_threads_acc_execution = 0;
+  tot_warps_acc_execution = 0;
+  sp_active_lanes_execution = 0;
+  sfu_active_lanes_execution = 0;
 }
 
 void power_stat_t::visualizer_print(gzFile visualizer_file) {

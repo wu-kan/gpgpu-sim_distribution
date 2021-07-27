@@ -52,7 +52,7 @@ void calculate_hw_mcpat(const gpgpu_sim_config &config,
                  unsigned tot_cycle, unsigned cycle, unsigned tot_inst,
                  unsigned inst, int power_simulation_mode, bool dvfs_enabled, 
                  char* hwpowerfile, char* benchname, std::string executed_kernelname, 
-                 const bool *accelwattch_hybrid_configuration);
+                 const bool *accelwattch_hybrid_configuration, bool aggregate_power_stats);
 
 bool parse_hw_file(char* hwpowerfile, bool find_target_kernel, vector<string> &hw_data, char* benchname, std::string executed_kernelname);
 

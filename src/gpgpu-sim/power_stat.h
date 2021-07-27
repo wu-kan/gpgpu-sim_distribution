@@ -174,6 +174,33 @@ class power_stat_t {
   unsigned long long l2w_misses_kernel;
   unsigned long long noc_tr_kernel;
   unsigned long long noc_rc_kernel;
+  unsigned long long tot_inst_execution;
+  unsigned long long tot_int_inst_execution;
+  unsigned long long tot_fp_inst_execution;
+  unsigned long long commited_inst_execution;
+  unsigned long long ialu_acc_execution;
+  unsigned long long imul24_acc_execution;
+  unsigned long long imul32_acc_execution;
+  unsigned long long imul_acc_execution;
+  unsigned long long idiv_acc_execution;
+  unsigned long long dp_acc_execution;
+  unsigned long long dpmul_acc_execution;
+  unsigned long long dpdiv_acc_execution;
+  unsigned long long fp_acc_execution;
+  unsigned long long fpmul_acc_execution;
+  unsigned long long fpdiv_acc_execution;
+  unsigned long long sqrt_acc_execution;
+  unsigned long long log_acc_execution;
+  unsigned long long sin_acc_execution;
+  unsigned long long exp_acc_execution;
+  unsigned long long tensor_acc_execution;
+  unsigned long long tex_acc_execution;
+  unsigned long long tot_fpu_acc_execution;
+  unsigned long long tot_sfu_acc_execution;
+  unsigned long long tot_threads_acc_execution;
+  unsigned long long tot_warps_acc_execution;
+  unsigned long long sp_active_lanes_execution;
+  unsigned long long sfu_active_lanes_execution;
   double get_total_inst(bool aggregate_stat) {
     double total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
@@ -541,7 +568,7 @@ class power_stat_t {
     return total_inst;
   }
 
-  float get_sp_active_lanes() {
+  double get_sp_active_lanes() {
     double total_inst = 0;
     for (unsigned i = 0; i < m_config->num_shader(); i++) {
       total_inst += (pwr_core_stat->m_active_sp_lanes[CURRENT_STAT_IDX][i]) -
@@ -581,6 +608,34 @@ class power_stat_t {
       return (float)((float)total_threads / (float)total_warps);
     else
       return 0;
+  }
+
+  unsigned long long get_tot_threads_kernel(bool aggregate_stat) {
+    unsigned total_threads = 0;
+    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+      if(aggregate_stat){
+        total_threads += (pwr_core_stat->m_active_exu_threads[CURRENT_STAT_IDX][i]) ;
+      }
+      else{
+        total_threads += (pwr_core_stat->m_active_exu_threads[CURRENT_STAT_IDX][i]) -
+                    (pwr_core_stat->m_active_exu_threads[PREV_STAT_IDX][i]);
+        }
+    }
+
+      return total_threads;
+  }
+  unsigned long long get_tot_warps_kernel(bool aggregate_stat) {
+    unsigned long long total_warps = 0;
+    for (unsigned i = 0; i < m_config->num_shader(); i++) {
+      if(aggregate_stat){
+        total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]);
+      }
+      else{
+        total_warps += (pwr_core_stat->m_active_exu_warps[CURRENT_STAT_IDX][i]) -
+                    (pwr_core_stat->m_active_exu_warps[PREV_STAT_IDX][i]);
+        }
+    }
+      return total_warps;
   }
 
 
