@@ -30,11 +30,13 @@
  ***************************************************************************/
 /********************************************************************
  *      Modified by:
- ** Jingwen Leng, Univeristy of Texas, Austin                   * Syed Gilani,
- *University of Wisconsin–Madison                * Tayler Hetherington,
- *University of British Columbia         * Ahmed ElTantawy, University of
- *British Columbia             *
+ * Jingwen Leng, University of Texas, Austin                
+ * Syed Gilani, University of Wisconsin–Madison         
+ * Tayler Hetherington, University of British Columbia
+ * Ahmed ElTantawy, University of British Columbia
+ * Vijay Kandiah, Northwestern University
  ********************************************************************/
+
 
 #include "XML_Parse.h"
 #include <stdio.h>
