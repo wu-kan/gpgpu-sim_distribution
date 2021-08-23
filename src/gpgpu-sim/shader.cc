@@ -191,6 +191,8 @@ void shader_core_ctx::create_schedulers() {
                 ? CONCRETE_SCHEDULER_TWO_LEVEL_ACTIVE
                 : sched_config.find("gto") != std::string::npos
                       ? CONCRETE_SCHEDULER_GTO
+                      : sched_config.find("rrr") != std::string::npos
+                            ? CONCRETE_SCHEDULER_RRR
                       : sched_config.find("old") != std::string::npos
                             ? CONCRETE_SCHEDULER_OLDEST_FIRST
                             : sched_config.find("warp_limiting") !=
@@ -219,6 +221,14 @@ void shader_core_ctx::create_schedulers() {
         break;
       case CONCRETE_SCHEDULER_GTO:
         schedulers.push_back(new gto_scheduler(
+            m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
+            &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
+            &m_pipeline_reg[ID_OC_SFU], &m_pipeline_reg[ID_OC_INT],
+            &m_pipeline_reg[ID_OC_TENSOR_CORE], m_specilized_dispatch_reg,
+            &m_pipeline_reg[ID_OC_MEM], i));
+        break;
+      case CONCRETE_SCHEDULER_RRR:
+        schedulers.push_back(new rrr_scheduler(
             m_stats, this, m_scoreboard, m_simt_stack, &m_warp,
             &m_pipeline_reg[ID_OC_SP], &m_pipeline_reg[ID_OC_DP],
             &m_pipeline_reg[ID_OC_SFU], &m_pipeline_reg[ID_OC_INT],
@@ -1101,6 +1111,33 @@ void scheduler_unit::order_lrr(
   }
 }
 
+template <class T>
+void scheduler_unit::order_rrr(
+    std::vector<T> &result_list, const typename std::vector<T> &input_list,
+    const typename std::vector<T>::const_iterator &last_issued_from_input,
+    unsigned num_warps_to_add) {
+  result_list.clear();
+
+  if (m_num_issued_last_cycle > 0 || warp(m_current_turn_warp).done_exit() ||
+      warp(m_current_turn_warp).waiting()) {
+    std::vector<shd_warp_t *>::const_iterator iter =
+      (last_issued_from_input == input_list.end()) ? 
+        input_list.begin() : last_issued_from_input + 1;
+    for (unsigned count = 0; count < num_warps_to_add; ++iter, ++count) {
+      if (iter == input_list.end()) {
+      iter = input_list.begin();
+      }
+      unsigned warp_id = (*iter)->get_warp_id();
+      if (!(*iter)->done_exit() && !(*iter)->waiting()) {
+        result_list.push_back(*iter);
+        m_current_turn_warp = warp_id;
+        break;
+      }
+    }
+  } else {
+    result_list.push_back(&warp(m_current_turn_warp));
+  }
+}
 /**
  * A general function to order things in an priority-based way.
  * The core usage of the function is similar to order_lrr.
@@ -1433,7 +1470,7 @@ void scheduler_unit::cycle() {
           m_last_supervised_issued = supervised_iter;
         }
       }
-
+      m_num_issued_last_cycle = issued;
       if (issued == 1)
         m_stats->single_issue_nums[m_id]++;
       else if (issued > 1)
@@ -1480,6 +1517,10 @@ bool scheduler_unit::sort_warps_by_oldest_dynamic_id(shd_warp_t *lhs,
 
 void lrr_scheduler::order_warps() {
   order_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
+            m_last_supervised_issued, m_supervised_warps.size());
+}
+void rrr_scheduler::order_warps() {
+  order_rrr(m_next_cycle_prioritized_warps, m_supervised_warps,
             m_last_supervised_issued, m_supervised_warps.size());
 }
 
@@ -3344,29 +3385,23 @@ unsigned int shader_core_config::max_cta(const kernel_info_t &k) const {
     // Unified cache config is in KB. Converting to B
     unsigned total_unified = m_L1D_config.m_unified_cache_size * 1024;
 
-    switch (adaptive_cache_config) {
-      case FIXED:
-        break;
-      case ADAPTIVE_CACHE: {
-        bool l1d_configured = false;
-        unsigned max_assoc = m_L1D_config.get_max_assoc();
+    bool l1d_configured = false;
+    unsigned max_assoc = m_L1D_config.get_max_assoc();
 
-        for (std::vector<unsigned>::const_iterator it = shmem_opt_list.begin();
-             it < shmem_opt_list.end(); it++) {
-          if (total_shmem <= *it) {
-            float l1_ratio = 1 - ((float)*(it) / total_unified);
-            m_L1D_config.set_assoc(max_assoc * l1_ratio);
-            l1d_configured = true;
-            break;
-          }
-        }
-
-        assert(l1d_configured && "no shared memory option found");
+    for (std::vector<unsigned>::const_iterator it = shmem_opt_list.begin();
+         it < shmem_opt_list.end(); it++) {
+      if (total_shmem <= *it) {
+        float l1_ratio = 1 - ((float)*(it) / total_unified);
+        // make sure the ratio is between 0 and 1
+        assert(0 <= l1_ratio && l1_ratio <= 1);
+        // round to nearest instead of round down
+        m_L1D_config.set_assoc(max_assoc * l1_ratio + 0.5f);
+        l1d_configured = true;
         break;
       }
-      default:
-        assert(0);
     }
+
+    assert(l1d_configured && "no shared memory option found");
 
     if (m_L1D_config.is_streaming()) {
       // for streaming cache, if the whole memory is allocated
@@ -3961,6 +3996,9 @@ void opndcoll_rfu_t::init(unsigned num_banks, shader_core_ctx *shader) {
     }
     m_cu[j]->init(j, num_banks, m_bank_warp_shift, shader->get_config(), this,
                   sub_core_model, reg_id, m_num_banks_per_sched);
+  }
+  for (unsigned j = 0; j < m_dispatch_units.size(); j++) {
+    m_dispatch_units[j].init(sub_core_model,m_num_warp_scheds);
   }
   m_initialized = true;
 }

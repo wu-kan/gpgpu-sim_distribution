@@ -321,6 +321,7 @@ enum concrete_scheduler {
   CONCRETE_SCHEDULER_LRR = 0,
   CONCRETE_SCHEDULER_GTO,
   CONCRETE_SCHEDULER_TWO_LEVEL_ACTIVE,
+  CONCRETE_SCHEDULER_RRR,
   CONCRETE_SCHEDULER_WARP_LIMITING,
   CONCRETE_SCHEDULER_OLDEST_FIRST,
   NUM_CONCRETE_SCHEDULERS
@@ -368,6 +369,12 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
   // higher order schedulers can take advantage of
   template <typename T>
   void order_lrr(
+      typename std::vector<T> &result_list,
+      const typename std::vector<T> &input_list,
+      const typename std::vector<T>::const_iterator &last_issued_from_input,
+      unsigned num_warps_to_add);
+  template <typename T>
+  void order_rrr(
       typename std::vector<T> &result_list,
       const typename std::vector<T> &input_list,
       const typename std::vector<T>::const_iterator &last_issued_from_input,
@@ -430,6 +437,8 @@ class scheduler_unit {  // this can be copied freely, so can be used in std
   register_set *m_tensor_core_out;
   register_set *m_mem_out;
   std::vector<register_set *> &m_spec_cores_out;
+  unsigned m_num_issued_last_cycle;
+  unsigned m_current_turn_warp;
 
   int m_id;
 };
@@ -447,6 +456,25 @@ class lrr_scheduler : public scheduler_unit {
                        sfu_out, int_out, tensor_core_out, spec_cores_out,
                        mem_out, id) {}
   virtual ~lrr_scheduler() {}
+  virtual void order_warps();
+  virtual void done_adding_supervised_warps() {
+    m_last_supervised_issued = m_supervised_warps.end();
+  }
+};
+
+class rrr_scheduler : public scheduler_unit {
+ public:
+  rrr_scheduler(shader_core_stats *stats, shader_core_ctx *shader,
+                Scoreboard *scoreboard, simt_stack **simt,
+                std::vector<shd_warp_t *> *warp, register_set *sp_out,
+                register_set *dp_out, register_set *sfu_out,
+                register_set *int_out, register_set *tensor_core_out,
+                std::vector<register_set *> &spec_cores_out,
+                register_set *mem_out, int id)
+      : scheduler_unit(stats, shader, scoreboard, simt, warp, sp_out, dp_out,
+                       sfu_out, int_out, tensor_core_out, spec_cores_out,
+                       mem_out, id) {}
+  virtual ~rrr_scheduler() {}
   virtual void order_warps();
   virtual void done_adding_supervised_warps() {
     m_last_supervised_issued = m_supervised_warps.end();
@@ -922,13 +950,44 @@ class opndcoll_rfu_t {  // operand collector based register file unit
       m_num_collectors = (*cus).size();
       m_next_cu = 0;
     }
+    void init(bool sub_core_model, unsigned num_warp_scheds) {
+      m_sub_core_model = sub_core_model;
+      m_num_warp_scheds = num_warp_scheds;
+      if (m_sub_core_model) {
+        m_last_cu_set = new unsigned(m_num_warp_scheds);
+        for (unsigned i = 0; i < m_num_warp_scheds; i++)
+        {
+          m_last_cu_set[i] = i * m_num_collectors / m_num_warp_scheds;
+        }
+      }
+      
+    }
 
     collector_unit_t *find_ready() {
-      for (unsigned n = 0; n < m_num_collectors; n++) {
-        unsigned c = (m_last_cu + n + 1) % m_num_collectors;
-        if ((*m_collector_units)[c].ready()) {
-          m_last_cu = c;
-          return &((*m_collector_units)[c]);
+      if (m_sub_core_model) {
+        assert(m_num_collectors % m_num_warp_scheds == 0 &&
+                 m_num_collectors >= m_num_warp_scheds);
+        unsigned cusPerSched = m_num_collectors / m_num_warp_scheds;
+        for (unsigned i = 0; i < m_num_warp_scheds; i++) {
+          unsigned cuLowerBound = i * cusPerSched;
+          unsigned cuUpperBound = cuLowerBound + cusPerSched;
+          assert(0 <= cuLowerBound && cuUpperBound <= m_num_collectors);
+          assert(cuLowerBound <= m_last_cu_set[i] && m_last_cu_set[i] <= cuUpperBound);
+          for (unsigned j = cuLowerBound; j < cuUpperBound; j++) {
+            unsigned c = cuLowerBound + (m_last_cu_set[i] + j + 1) % cusPerSched;
+            if ((*m_collector_units)[c].ready()) {
+            m_last_cu_set[i] = c;
+            return &((*m_collector_units)[c]);
+            }
+          }
+        }
+      } else {
+        for (unsigned n = 0; n < m_num_collectors; n++) {
+          unsigned c = (m_last_cu + n + 1) % m_num_collectors;
+          if ((*m_collector_units)[c].ready()) {
+            m_last_cu = c;
+            return &((*m_collector_units)[c]);
+          }
         }
       }
       return NULL;
@@ -938,7 +997,11 @@ class opndcoll_rfu_t {  // operand collector based register file unit
     unsigned m_num_collectors;
     std::vector<collector_unit_t> *m_collector_units;
     unsigned m_last_cu;  // dispatch ready cu's rr
+    unsigned *m_last_cu_set;
     unsigned m_next_cu;  // for initialization
+
+    bool m_sub_core_model;
+    unsigned m_num_warp_scheds;
   };
 
   // opndcoll_rfu_t data members
@@ -1498,25 +1561,11 @@ class shader_core_config : public core_config {
 
     // parse gpgpu_shmem_option for adpative cache config
     if (adaptive_cache_config) {
-      for (unsigned i = 0; i < strlen(gpgpu_shmem_option); i++) {
-        char option[4];
-        int j = 0;
-        while (gpgpu_shmem_option[i] != ',' && i < strlen(gpgpu_shmem_option)) {
-          if (gpgpu_shmem_option[i] == ' ') {
-            // skip spaces
-            i++;
-          } else {
-            if (!isdigit(gpgpu_shmem_option[i])) {
-              // check for non digits, which should not be here
-              assert(0 && "invalid config: -gpgpu_shmem_option");
-            }
-            option[j] = gpgpu_shmem_option[i];
-            j++;
-            i++;
-          }
-        }
-        // convert KB -> B
-        shmem_opt_list.push_back((unsigned)atoi(option) * 1024);
+      std::stringstream ss(gpgpu_shmem_option);
+      while (ss.good()) {
+        std::string option;
+        std::getline(ss, option, ',');
+        shmem_opt_list.push_back((unsigned)std::stoi(option) * 1024);
       }
       std::sort(shmem_opt_list.begin(), shmem_opt_list.end());
     }
