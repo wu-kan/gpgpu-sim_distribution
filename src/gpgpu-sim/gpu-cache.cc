@@ -38,7 +38,8 @@
 
 const char *cache_request_status_str(enum cache_request_status status) {
   static const char *static_cache_request_status_str[] = {
-      "HIT", "HIT_RESERVED", "MISS", "RESERVATION_FAIL", "SECTOR_MISS", "MSHR_HIT"};
+      "HIT",         "HIT_RESERVED", "MISS", "RESERVATION_FAIL",
+      "SECTOR_MISS", "MSHR_HIT"};
 
   assert(sizeof(static_cache_request_status_str) / sizeof(const char *) ==
          NUM_CACHE_REQUEST_STATUS);
