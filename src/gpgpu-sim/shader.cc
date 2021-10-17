@@ -1,19 +1,20 @@
-// Copyright (c) 2009-2011, Tor M. Aamodt, Wilson W.L. Fung, Ali Bakhoda,
-// George L. Yuan, Andrew Turner, Inderpreet Singh
-// The University of British Columbia
+// Copyright (c) 2009-2021, Tor M. Aamodt, Wilson W.L. Fung, Ali Bakhoda,
+// George L. Yuan, Andrew Turner, Inderpreet Singh, Vijay Kandiah, Nikos Hardavellas
+// The University of British Columbia, Northwestern University
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
-// Redistributions of source code must retain the above copyright notice, this
-// list of conditions and the following disclaimer.
-// Redistributions in binary form must reproduce the above copyright notice,
-// this list of conditions and the following disclaimer in the documentation
-// and/or other materials provided with the distribution. Neither the name of
-// The University of British Columbia nor the names of its contributors may be
-// used to endorse or promote products derived from this software without
-// specific prior written permission.
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer;
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution;
+// 3. Neither the names of The University of British Columbia, Northwestern 
+//    University nor the names of their contributors may be used to
+//    endorse or promote products derived from this software without specific
+//    prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -456,6 +457,10 @@ shader_core_ctx::shader_core_ctx(class gpgpu_sim *gpu,
   m_sid = shader_id;
   m_tpc = tpc_id;
 
+  if(get_gpu()->get_config().g_power_simulation_enabled){
+    scaling_coeffs =  get_gpu()->get_scaling_coeffs();
+  }
+
   m_last_inst_gpu_sim_cycle = 0;
   m_last_inst_gpu_tot_sim_cycle = 0;
 
@@ -748,6 +753,8 @@ void shader_core_stats::visualizer_print(gzFile visualizer_file) {
   }
   gzprintf(visualizer_file, "\n");
 
+  gzprintf(visualizer_file, "ctas_completed: %d\n", ctas_completed);
+  ctas_completed = 0;
   // warp issue breakdown
   unsigned sid = m_config->gpgpu_warp_issue_shader;
   unsigned count = 0;
@@ -857,7 +864,7 @@ void shader_core_ctx::decode() {
     m_warp[m_inst_fetch_buffer.m_warp_id]->inc_inst_in_pipeline();
     if (pI1) {
       m_stats->m_num_decoded_insn[m_sid]++;
-      if (pI1->oprnd_type == INT_OP) {
+      if ((pI1->oprnd_type == INT_OP) || (pI1->oprnd_type == UN_OP))  { //these counters get added up in mcPat to compute scheduler power
         m_stats->m_num_INTdecoded_insn[m_sid]++;
       } else if (pI1->oprnd_type == FP_OP) {
         m_stats->m_num_FPdecoded_insn[m_sid]++;
@@ -868,7 +875,7 @@ void shader_core_ctx::decode() {
         m_warp[m_inst_fetch_buffer.m_warp_id]->ibuffer_fill(1, pI2);
         m_warp[m_inst_fetch_buffer.m_warp_id]->inc_inst_in_pipeline();
         m_stats->m_num_decoded_insn[m_sid]++;
-        if (pI2->oprnd_type == INT_OP) {
+        if ((pI1->oprnd_type == INT_OP) || (pI1->oprnd_type == UN_OP))  { //these counters get added up in mcPat to compute scheduler power
           m_stats->m_num_INTdecoded_insn[m_sid]++;
         } else if (pI2->oprnd_type == FP_OP) {
           m_stats->m_num_FPdecoded_insn[m_sid]++;
@@ -2170,7 +2177,7 @@ void sp_unit::active_lanes_in_pipeline() {
 void dp_unit::active_lanes_in_pipeline() {
   unsigned active_count = pipelined_simd_unit::get_active_lanes_in_pipeline();
   assert(active_count <= m_core->get_config()->warp_size);
-  m_core->incspactivelanes_stat(active_count);
+  //m_core->incspactivelanes_stat(active_count);
   m_core->incfuactivelanes_stat(active_count);
   m_core->incfumemactivelanes_stat(active_count);
 }
@@ -2685,6 +2692,7 @@ void shader_core_ctx::register_cta_thread_exit(unsigned cta_num,
   m_cta_status[cta_num]--;
   if (!m_cta_status[cta_num]) {
     // Increment the completed CTAs
+    m_stats->ctas_completed++;
     m_gpu->inc_completed_cta();
     m_n_active_cta--;
     m_barriers.deallocate_barrier(cta_num);
@@ -2751,6 +2759,7 @@ void gpgpu_sim::shader_print_runtime_stat(FILE *fout) {
 
 void gpgpu_sim::shader_print_scheduler_stat(FILE *fout,
                                             bool print_dynamic_info) const {
+  fprintf(fout, "ctas_completed %d, ", m_shader_stats->ctas_completed);
   // Print out the stats from the sampling shader core
   const unsigned scheduler_sampling_core =
       m_shader_config->gpgpu_warp_issue_shader;
@@ -2960,52 +2969,69 @@ void warp_inst_t::print(FILE *fout) const {
   m_config->gpgpu_ctx->func_sim->ptx_print_insn(pc, fout);
   fprintf(fout, "\n");
 }
-void shader_core_ctx::incexecstat(warp_inst_t *&inst) {
-  if (inst->mem_op == TEX) inctex_stat(inst->active_count(), 1);
-
-  // Latency numbers for next operations are used to scale the power values
-  // for special operations, according observations from microbenchmarking
-  // TODO: put these numbers in the xml configuration
-
-  switch (inst->sp_op) {
+void shader_core_ctx::incexecstat(warp_inst_t *&inst)
+{
+    // Latency numbers for next operations are used to scale the power values
+    // for special operations, according observations from microbenchmarking
+    // TODO: put these numbers in the xml configuration
+  if(get_gpu()->get_config().g_power_simulation_enabled){
+    switch(inst->sp_op){
     case INT__OP:
-      incialu_stat(inst->active_count(), 32);
+      incialu_stat(inst->active_count(), scaling_coeffs->int_coeff);
       break;
     case INT_MUL_OP:
-      incimul_stat(inst->active_count(), 7.2);
+      incimul_stat(inst->active_count(), scaling_coeffs->int_mul_coeff);
       break;
     case INT_MUL24_OP:
-      incimul24_stat(inst->active_count(), 4.2);
+      incimul24_stat(inst->active_count(), scaling_coeffs->int_mul24_coeff);
       break;
     case INT_MUL32_OP:
-      incimul32_stat(inst->active_count(), 4);
+      incimul32_stat(inst->active_count(), scaling_coeffs->int_mul32_coeff);
       break;
     case INT_DIV_OP:
-      incidiv_stat(inst->active_count(), 40);
+      incidiv_stat(inst->active_count(), scaling_coeffs->int_div_coeff);
       break;
     case FP__OP:
-      incfpalu_stat(inst->active_count(), 1);
+      incfpalu_stat(inst->active_count(),scaling_coeffs->fp_coeff);
       break;
     case FP_MUL_OP:
-      incfpmul_stat(inst->active_count(), 1.8);
+      incfpmul_stat(inst->active_count(), scaling_coeffs->fp_mul_coeff);
       break;
     case FP_DIV_OP:
-      incfpdiv_stat(inst->active_count(), 48);
+      incfpdiv_stat(inst->active_count(), scaling_coeffs->fp_div_coeff);
+      break;
+    case DP___OP:
+      incdpalu_stat(inst->active_count(), scaling_coeffs->dp_coeff);
+      break;
+    case DP_MUL_OP:
+      incdpmul_stat(inst->active_count(), scaling_coeffs->dp_mul_coeff);
+      break;
+    case DP_DIV_OP:
+      incdpdiv_stat(inst->active_count(), scaling_coeffs->dp_div_coeff);
       break;
     case FP_SQRT_OP:
-      inctrans_stat(inst->active_count(), 25);
+      incsqrt_stat(inst->active_count(), scaling_coeffs->sqrt_coeff);
       break;
     case FP_LG_OP:
-      inctrans_stat(inst->active_count(), 35);
+      inclog_stat(inst->active_count(), scaling_coeffs->log_coeff);
       break;
     case FP_SIN_OP:
-      inctrans_stat(inst->active_count(), 12);
+      incsin_stat(inst->active_count(), scaling_coeffs->sin_coeff);
       break;
     case FP_EXP_OP:
-      inctrans_stat(inst->active_count(), 35);
+      incexp_stat(inst->active_count(), scaling_coeffs->exp_coeff);
+      break;
+    case TENSOR__OP:
+      inctensor_stat(inst->active_count(), scaling_coeffs->tensor_coeff);
+      break;
+    case TEX__OP:
+      inctex_stat(inst->active_count(), scaling_coeffs->tex_coeff);
       break;
     default:
       break;
+    }
+    if(inst->const_cache_operand) //warp has const address space load as one operand
+      inc_const_accesses(1);
   }
 }
 void shader_core_ctx::print_stage(unsigned int stage, FILE *fout) const {

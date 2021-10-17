@@ -1,4 +1,8 @@
 LOG:
+Version 4.2.0 vs 4.0.0 
+- Added AccelWattch power model v1.0 which replaces GPUWattch. 
+- Added AccelWattch XML configuration files for SM7_QV100, SM7_TITANV, SM75_RTX2060_S, SM6_TITANX. Note that all these AccelWattch XML configuration files are tuned only for SM7_QV100. 
+
 Version 4.0.0 (development branch) versus 3.2.3
 -Front-End:
 1- Support .nc cache modifier and __ldg function to access the read-only L1D cache
