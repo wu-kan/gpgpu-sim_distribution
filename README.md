@@ -59,7 +59,7 @@ Detailed documentation on what GPGPU-Sim models, how to configure it, and a
 guide to the source code can be found here: <http://gpgpu-sim.org/manual/>.
 Instructions for building doxygen source code documentation are included below.
 
-Previous versions of GPGPU-Sim (3.2.0 to 4.0.0) included the [GPUWattch Energy model](http://gpgpu-sim.org/gpuwattch/) which has been replaced by AccelWattch version 1.0 in GPGPU-Sim version 4.2.0. AccelWattch supports modern GPUs and is validated against a NVIDIA Volta QV100 GPU. Detailed documentation on AccelWattch can be found here: [AccelWattch Overview](https://github.com/VijayKandiah/accel-sim-framework#accelwattch-overview) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/VijayKandiah/accel-sim-framework/blob/release/AccelWattch.md).
+Previous versions of GPGPU-Sim (3.2.0 to 4.0.0) included the [GPUWattch Energy model](http://gpgpu-sim.org/gpuwattch/) which has been replaced by AccelWattch version 1.0 in GPGPU-Sim version 4.1.0. AccelWattch supports modern GPUs and is validated against a NVIDIA Volta QV100 GPU. Detailed documentation on AccelWattch can be found here: [AccelWattch Overview](https://github.com/VijayKandiah/accel-sim-framework#accelwattch-overview) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/VijayKandiah/accel-sim-framework/blob/release/AccelWattch.md).
 
 If you have questions, please sign up for the google groups page (see
 gpgpu-sim.org), but note that use of this simulator does not imply any level of
@@ -106,7 +106,7 @@ derived from vector_types.h (one of the CUDA header files).
 
 ## AccelWattch Power Model
 
-AccelWattch (introduced in GPGPU-Sim 4.2.0) was developed by researchers at 
+AccelWattch (introduced in GPGPU-Sim 4.1.0) was developed by researchers at 
 Northwestern University, Purdue University, and the University of British Columbia. 
 Contributors to AccelWattch include Nikos Hardavellas's research group at Northwestern University: 
 Vijay Kandiah; Tor Aamodt's research group at the University of British Columbia: Scott Peverelle; 
