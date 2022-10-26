@@ -360,7 +360,8 @@ void compute_flux(int nelr, int* elements_surrounding_elements, double* normals,
 	    fprintf(stderr,"GPUassert: %s compute_flux failed\n", cudaGetErrorString(error));
 	    exit(-1);
 	  }
-
+    cudaDeviceSynchronize();
+    exit(0);
 }
 
 __global__ void cuda_time_step(int j, int nelr, double* old_variables, double* variables, double* step_factors, double* fluxes)
