@@ -80,7 +80,7 @@ static void __global__ __launch_bounds__(BLOCK_DIM_X)
   }
 }
 void WuK_Timer(const char *tag, const std::function<void()> &kernel,
-               int test_time = 2) {
+               int test_time = 1) {
   float min_time = 9e99;
   for (int i = 0; i < test_time; ++i) {
     cudaEvent_t beg, end;

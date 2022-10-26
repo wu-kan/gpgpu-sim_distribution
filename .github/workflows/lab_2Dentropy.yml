@@ -44,7 +44,7 @@ jobs:
           rm -rf ~/SM7_QV100
           cp -r $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution/configs/tested-cfgs/SM7_QV100 ~
           cd ~/SM7_QV100
-          ~/2Dentropy 256 256 2>stderr.log | tee stdout.log
+          ~/2Dentropy 512 512 2>stderr.log | tee stdout.log
 
       - uses: actions/upload-artifact@v3
         with:
