@@ -5670,6 +5670,7 @@ int main(int argc, char *argv[])
       printf("time = %e, dt=%e\n",
              double(mesh.time()), double(mesh.deltatime()) ) ;
 #endif
+      break;
    }
    printf("iterations: %d\n",its);
 
