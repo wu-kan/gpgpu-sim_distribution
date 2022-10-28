@@ -37,24 +37,24 @@ jobs:
           export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 29 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
           (spack load gcc@7.5.0 cuda &&
               cd test/lulesh &&
-              nvcc --cudart shared -arch=sm_70 -I. -o ~/lulesh lulesh.cu)
+              nvcc --cudart shared -arch=sm_86 -I. -o ~/lulesh lulesh.cu)
 
-          rm -rf ~/SM7_QV100
-          cp -r $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution/configs/tested-cfgs/SM7_QV100 ~
+          rm -rf ~/SM86_RTX3070
+          cp -r $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution/configs/tested-cfgs/SM86_RTX3070 ~
           spack load gpgpu-sim@modified
           cd $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution
           . ./setup_environment release
-          cd ~/SM7_QV100
+          cd ~/SM86_RTX3070
           ~/lulesh 2>stderr.log | tee stdout.log
 
       - uses: actions/upload-artifact@v3
         with:
           path: |
-            ~/SM7_QV100/*
+            ~/SM86_RTX3070/*
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ~/SM7_QV100/*
+            ~/SM86_RTX3070/*

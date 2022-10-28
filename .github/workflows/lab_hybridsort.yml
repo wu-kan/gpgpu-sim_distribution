@@ -36,24 +36,24 @@ jobs:
           . $SCC_SETUP_ENV
           export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 29 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
           (spack load gcc@7.5.0 cuda &&
-              nvcc --cudart shared -arch=sm_70 -o ~/hybridsort test/hybridsort/bucketsort.cu test/hybridsort/mergesort.cu test/hybridsort/main.cu)
+              nvcc --cudart shared -arch=sm_86 -o ~/hybridsort test/hybridsort/bucketsort.cu test/hybridsort/mergesort.cu test/hybridsort/main.cu)
 
           spack load gpgpu-sim@modified
           cd $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution
           . ./setup_environment release
-          rm -rf ~/SM7_QV100
-          cp -r $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution/configs/tested-cfgs/SM7_QV100 ~
-          cd ~/SM7_QV100
+          rm -rf ~/SM86_RTX3070
+          cp -r $(spack location -i gpgpu-sim@modified)/gpgpu-sim_distribution/configs/tested-cfgs/SM86_RTX3070 ~
+          cd ~/SM86_RTX3070
           ~/hybridsort r 2>stderr.log | tee stdout.log
 
       - uses: actions/upload-artifact@v3
         with:
           path: |
-            ~/SM7_QV100/*
+            ~/SM86_RTX3070/*
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ~/SM7_QV100/*
+            ~/SM86_RTX3070/*
