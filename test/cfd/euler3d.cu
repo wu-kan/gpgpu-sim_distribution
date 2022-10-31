@@ -392,6 +392,8 @@ void compute_flux(int nelr, int* elements_surrounding_elements, float* normals, 
 	dim3 Dg(nelr / BLOCK_SIZE_3), Db(BLOCK_SIZE_3);
 	cuda_compute_flux<<<Dg,Db>>>(nelr, elements_surrounding_elements, normals, variables, fluxes);
 	getLastCudaError("compute_flux failed");
+	cudaDeviceSynchronize();
+    exit(0);
 }
 
 __global__ void cuda_time_step(int j, int nelr, float* old_variables, float* variables, float* step_factors, float* fluxes)
