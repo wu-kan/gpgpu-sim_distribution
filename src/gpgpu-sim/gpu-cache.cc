@@ -35,6 +35,28 @@
 #include "hashing.h"
 #include "stat-tool.h"
 
+enum cache_request_status data_cache::ideal_access(new_addr_type addr, mem_fetch *mf,
+                                             unsigned time,
+                                             std::list<cache_event> &events) {
+  assert(mf->get_data_size() <= m_config.get_atom_sz());
+  bool wr = mf->get_is_write();
+  new_addr_type block_addr = m_config.block_addr(addr);
+  unsigned cache_index = (unsigned)-1;
+  enum cache_request_status access_status =
+      process_tag_probe(wr, HIT, addr, cache_index, mf, time, events);
+  m_stats.inc_stats(mf->get_access_type(),
+                    m_stats.select_stats_status(HIT, access_status));
+  m_stats.inc_stats_pw(mf->get_access_type(), m_stats.select_stats_status(
+                                                  HIT, access_status));
+  return access_status;
+}
+
+enum cache_request_status l2_cache::ideal_access(new_addr_type addr, mem_fetch *mf,
+                                           unsigned time,
+                                           std::list<cache_event> &events) {
+  return data_cache::ideal_access(addr, mf, time, events);
+}
+
 // used to allocate memory that is large enough to adapt the changes in cache
 // size across kernels
 

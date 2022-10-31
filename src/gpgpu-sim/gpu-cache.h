@@ -1534,7 +1534,9 @@ class data_cache : public baseline_cache {
   virtual enum cache_request_status access(new_addr_type addr, mem_fetch *mf,
                                            unsigned time,
                                            std::list<cache_event> &events);
-
+  enum cache_request_status ideal_access(new_addr_type addr, mem_fetch *mf,
+                                           unsigned time,
+                                           std::list<cache_event> &events);
  protected:
   data_cache(const char *name, cache_config &config, int core_id, int type_id,
              mem_fetch_interface *memport, mem_fetch_allocator *mfcreator,
@@ -1691,6 +1693,9 @@ class l2_cache : public data_cache {
   virtual ~l2_cache() {}
 
   virtual enum cache_request_status access(new_addr_type addr, mem_fetch *mf,
+                                           unsigned time,
+                                           std::list<cache_event> &events);
+  enum cache_request_status ideal_access(new_addr_type addr, mem_fetch *mf,
                                            unsigned time,
                                            std::list<cache_event> &events);
 };
