@@ -7,15 +7,15 @@
 // parameters for nVidia device execution
 
 #define BLOCK_SIZE 64
-#define GRID_SIZE 64
+#define GRID_SIZE 8192
 
 // parameters for LIBOR calculation
 
 #define NN 80
 #define NMAT 40
-#define L2_SIZE 3280 //NN*(NMAT+1)
+#define L2_SIZE NN*(NMAT+1) // 3280 //NN*(NMAT+1)
 #define NOPT 15
-#define NPATH 4096
+#define NPATH (BLOCK_SIZE*GRID_SIZE)
 
 // constant data for swaption portfolio: stored in device memory,
 // initialised by host and read by device threads
@@ -163,7 +163,7 @@ __device__ float portfolio_b(float *L, float *L_b)
 __device__ float portfolio(float *L)
 {
   int   n, m, i;
-  float v, b, s, swapval, B[40], S[40];
+  float v, b, s, swapval, B[NN-NMAT], S[NN-NMAT];
 	
   b = 1.0;
   s = 0.0;
@@ -220,7 +220,7 @@ __global__ void Pathcalc_Portfolio_KernelGPU(float *d_v, float *d_Lb)
   }
 }
 
-
+#if 0
 __global__ void Pathcalc_Portfolio_KernelGPU2(float *d_v)
 {
   const int     tid = blockDim.x * blockIdx.x + threadIdx.x;
@@ -242,7 +242,85 @@ __global__ void Pathcalc_Portfolio_KernelGPU2(float *d_v)
     d_v[path] = portfolio(L);
   }
 }
+#else
+__global__ void Pathcalc_Portfolio_KernelGPU2(float *d_v)
+{
+  const int     tid = blockDim.x * blockIdx.x + threadIdx.x;
+  const int threadN = blockDim.x * gridDim.x;
 
+  __shared__ float L[NN][BLOCK_SIZE];
+  __shared__ union {
+    float z[NN][BLOCK_SIZE];
+    struct {
+      float B[NN-NMAT][BLOCK_SIZE], S[NN-NMAT][BLOCK_SIZE];
+    } BS;
+  } U;
+  
+  /* Monte Carlo LIBOR path calculation*/
+
+  for(int path = tid; path < NPATH; path += threadN){
+    // initialise the data for current thread
+    for (int i=0; i<N; i++) {
+      // for real application, z should be randomly generated
+      U.z[i][threadIdx.x] = 0.3;
+      L[i][threadIdx.x] = 0.05;
+    }	   
+
+    /* Monte Carlo LIBOR path calculation */
+
+    do {
+      int   i, n;
+      float sqez, lam, con1, v, vrat;
+
+      for(n=0; n<Nmat; n++) {
+        sqez = sqrtf(delta)*U.z[n][threadIdx.x];
+        v = 0.0;
+
+        for (i=n+1; i<N; i++) {
+          lam  = lambda[i-n-1];
+          con1 = delta*lam;
+          v   += __fdividef(con1*L[i][threadIdx.x],1.0+delta*L[i][threadIdx.x]);
+          vrat = __expf(con1*v + lam*(sqez-0.5*con1));
+          L[i][threadIdx.x] *= vrat;
+        }
+      }
+    } while(0);
+
+    /* calculate the portfolio value v */
+
+    do {
+      int   n, m, i;
+      float v, b, s, swapval;
+      
+      b = 1.0;
+      s = 0.0;
+
+      for(n=Nmat; n<N; n++) {
+        b = b/(1.0+delta*L[n][threadIdx.x]);
+        s = s + delta*b;
+        U.BS.B[n-Nmat][threadIdx.x] = b;
+        U.BS.S[n-Nmat][threadIdx.x] = s;
+      }
+
+      v = 0.0;
+
+      for(i=0; i<Nopt; i++){
+        m = maturities[i] -1;
+        swapval = U.BS.B[m][threadIdx.x] + swaprates[i]*U.BS.S[m][threadIdx.x] - 1.0;
+        if(swapval<0)
+          v += -100.0*swapval;
+      }
+
+      // apply discount //
+
+      b = 1.0;
+      for (n=0; n<Nmat; n++) b = b/(1.0+delta*L[n][threadIdx.x]);
+
+      d_v[path] = b * v;
+    } while(0);
+  }
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 // Main program
@@ -325,13 +403,13 @@ int main(int argc, char **argv){
   CUT_CHECK_ERROR("Pathcalc_Portfolio_kernelGPU2() execution failed\n");
   CUDA_SAFE_CALL( cudaThreadSynchronize() );
 
+  CUT_SAFE_CALL( cutStopTimer(hTimer) );
+  gpuTime = cutGetTimerValue(hTimer);
+
   // Read back GPU results and compute average
 
   CUDA_SAFE_CALL( cudaMemcpy(h_v, d_v, sizeof(float)*NPATH,
                   cudaMemcpyDeviceToHost) );
-  CUT_SAFE_CALL( cutStopTimer(hTimer) );
-  gpuTime = cutGetTimerValue(hTimer);
-
   v = 0.0;
   for (i=0; i<NPATH; i++) v += h_v[i];
   v = v / NPATH;
@@ -351,14 +429,16 @@ int main(int argc, char **argv){
   CUT_CHECK_ERROR("Pathcalc_Portfolio_kernelGPU() execution failed\n");
   CUDA_SAFE_CALL( cudaThreadSynchronize() );
 
+  CUT_SAFE_CALL( cutStopTimer(hTimer) );
+  gpuTime = cutGetTimerValue(hTimer);
+
+
   // Read back GPU results and compute average
 
   CUDA_SAFE_CALL( cudaMemcpy(h_v, d_v, sizeof(float)*NPATH,
                   cudaMemcpyDeviceToHost) );
   CUDA_SAFE_CALL( cudaMemcpy(h_Lb, d_Lb, sizeof(float)*NPATH,
                   cudaMemcpyDeviceToHost) );
-  CUT_SAFE_CALL( cutStopTimer(hTimer) );
-  gpuTime = cutGetTimerValue(hTimer);
     
   v = 0.0;
   for (i=0; i<NPATH; i++) v += h_v[i];
