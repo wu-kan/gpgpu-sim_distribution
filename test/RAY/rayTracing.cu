@@ -33,12 +33,13 @@ float4 *h_debug_float4;
 uint *h_debug_uint;
 #endif
 int g_verbose;
-
+#define BLOCK_DIM_X 16
+#define BLOCK_DIM_Y 8
 #include <rayTracing_kernel.cu>
 
 unsigned width = 64; //640; //512; //16; //32; //512;
 unsigned height = 64; //480; //512; //16;//512;
-dim3 blockSize(16,8);
+dim3 blockSize(BLOCK_DIM_X,BLOCK_DIM_Y);
 dim3 gridSize(width/blockSize.x, height/blockSize.y);
 
 float3 viewRotation;

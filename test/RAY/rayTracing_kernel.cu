@@ -431,7 +431,7 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
 	uint tid(__umul24(threadIdx.y, blockDim.x) + threadIdx.x);
 
 	uint id(x + y * imageW);
-	float4 pile[5];
+	__shared__ float4 pile[5][BLOCK_DIM_Y][BLOCK_DIM_X];
 	uint Obj, nRec(5), n(0);
 	//__shared__ Node node[numObj];
 	float prof, tmp;
@@ -439,7 +439,7 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
 	//if( tid < numObj ) node[tid] = cnode[tid];
 
 	for( int i(0); i < nRec; ++i )
-		pile[i] = make_float4(0.0f,0.0f,0.0f,1.0f);
+		pile[i][threadIdx.y][threadIdx.x] = make_float4(0.0f,0.0f,0.0f,1.0f);
 
 	if( x < imageW && y < imageH )
 	{
@@ -501,7 +501,7 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
 				float3 P(R.A+R.u*t), L(normalize(make_float3(10.0f,10.0f,10.0f)-P)), V(normalize(R.A-P));
 				float3 N(nod.fg?getNormaleP(P):getNormale(P,s.C));
 				float3 Np(dot(V,N)<0.0f?(-1*N):N);
-				pile[i] = 0.05f * color;
+				pile[i][threadIdx.y][threadIdx.x] = 0.05f * color;
             #ifdef DEVICE_EMU
 //          printf("%d: i=%d, pile[i] = %e %e %e %e\n", threadIdx.x, i, pile[i].x, pile[i].y, pile[i].z, pile[i].w);
 //          printf("%d: i=%d, color = %e %e %e %e\n", threadIdx.x, i, color.x, color.y, color.z, color.w);
@@ -533,7 +533,7 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
                //float3 Ri(2.0f*Np*dot(Np,L) - L);
 					float3 Ri(normalize(L+V));
 					//Ri = (L+V)/normalize(L+V);
-					pile[i] += 0.3f * color* (min(1.0f,dot(Np,L)));
+					pile[i][threadIdx.y][threadIdx.x] += 0.3f * color* (min(1.0f,dot(Np,L)));
                #ifdef DEVICE_EMU
 //             printf("%d: i=%d, pile[i] = %e %e %e %e\n", threadIdx.x, i, pile[i].x, pile[i].y, pile[i].z, pile[i].w);
                #endif
@@ -545,9 +545,9 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
                #else
                tmp = 0.8f * float2int_pow50(max(0.0f,min(1.0f,dot(Np,Ri))));
                #endif
-					pile[i].x += tmp;
-					pile[i].y += tmp;
-					pile[i].z += tmp;
+					pile[i][threadIdx.y][threadIdx.x].x += tmp;
+					pile[i][threadIdx.y][threadIdx.x].y += tmp;
+					pile[i][threadIdx.y][threadIdx.x].z += tmp;
                #ifdef DEVICE_EMU
 //             printf("%d: i=%d, pile[i] = %e %e %e %e\n", threadIdx.x, i, pile[i].x, pile[i].y, pile[i].z, pile[i].w);
                #endif
@@ -577,11 +577,11 @@ __global__  void render(uint * result, Node * dnode, uint imageW, uint imageH, f
 //    printf("%d: pile[4] = %e %e %e %e\n", threadIdx.x, pile[4].x, pile[4].y, pile[4].z, pile[4].w);
 #endif
       for( int i(n-1); i > 0; i-- )
-				pile[i-1] = pile[i-1] + 0.8f*pile[i];
+				pile[i-1][threadIdx.y][threadIdx.x] = pile[i-1][threadIdx.y][threadIdx.x] + 0.8f*pile[i][threadIdx.y][threadIdx.x];
 #ifdef DEVICE_EMU
 //    printf("%d: pile[0] = %e %e %e %e\n", threadIdx.x, pile[0].x, pile[0].y, pile[0].z, pile[0].w);
 #endif
-      result[id] += rgbaFloatToInt(pile[0]);
+      result[id] += rgbaFloatToInt(pile[0][threadIdx.y][threadIdx.x]);
 	}
 }
 
