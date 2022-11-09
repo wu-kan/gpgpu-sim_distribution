@@ -34,7 +34,7 @@ jobs:
       - name: run cfd
         run: |
           . $SCC_SETUP_ENV
-          export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 29 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
+          export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 0 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
           (spack load gcc@7.5.0 cuda &&
               nvcc --cudart shared -arch=sm_86 -o ~/cfd -I test/hybridsort  test/cfd/euler3d.cu)
 

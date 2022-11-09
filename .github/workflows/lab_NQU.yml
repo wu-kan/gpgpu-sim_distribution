@@ -34,7 +34,7 @@ jobs:
       - name: run NQU
         run: |
           . $SCC_SETUP_ENV
-          export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 29 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
+          export NVCC_PREPEND_FLAGS='--resource-usage -maxrregcount 0 -Xptxas -v -Xptxas -warn-spills -Xptxas -warn-lmem-usage'
           (spack load gcc@7.5.0 cuda &&
               nvcc --cudart shared -arch=sm_86 -o ~/NQU -I test/NQU/cutil/inc -L test/NQU/cutil/lib -lcutil_x86_64 test/NQU/nqueen.cu)
 
